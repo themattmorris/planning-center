@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "shd101wyy.markdown-preview-enhanced",
+    "streetsidesoftware.code-spell-checker",
+    "tamasfe.even-better-toml",
+    "charliermarsh.ruff"
+  ]
+}

@@ -1,0 +1,105 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "planning-center"
+description = "Python wrapper for Planning Center API."
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = []
+authors = [
+  { name = "Matt Morris", email = "matt.morris114@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "pypco",
+    "pydantic-settings",
+]
+dynamic = ["version"]
+
+[tool.uv]
+dev-dependencies = ["pytest", "pre-commit"]
+
+[project.urls]
+Issues = "https://github.com/themattmorris/planning-center/issues"
+Source = "https://github.com/themattmorris/planning-center"
+
+[tool.hatch.version]
+path = "planning_center/__init__.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-s -vv --cov=planning_center --cov-report xml --cov-report term --cov-append"
+log_cli = true
+log_cli_level = "INFO"
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+  "@overload",
+  "pragma: no cover",
+]
+
+[tool.ruff]
+fix = true
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+  "A",
+  "ARG",
+  "B",
+  "BLE",
+  "C",
+  "C4",
+  "C90",
+  "D",
+  "E",
+  "ERA",
+  "EXE",
+  "F",
+  "I",
+  "ICN",
+  "INP",
+  "ISC",
+  "N",
+  "PD",
+  "PGH",
+  "PIE",
+  "PL",
+  "PT",
+  "PTH",
+  "RET",
+  "RUF",
+  "S",
+  "SIM",
+  "T20",
+  "TRY",
+  "UP",
+  "W",
+]
+ignore = ["D205"]
+fixable = ["ALL"]
+pydocstyle.convention = "google"
+mccabe.max-complexity = 22
+
+[tool.ruff.lint.isort]
+known-first-party = ["planning_center", "tests"]
+lines-after-imports = 2
+
+[tool.mypy]
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = "pydantic.mypy"
+explicit_package_bases = true
+disable_error_code = "empty-body"
