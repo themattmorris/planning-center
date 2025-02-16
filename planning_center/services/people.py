@@ -3,26 +3,26 @@ https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/perso
 """
 
 import datetime
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from pydantic import Field
-
-from ..base import Endpoint, FrozenModel, HTTPMethod, ResponseModel
-
-
-class Data(FrozenModel):
-    """Data about a related attribute."""
-
-    type: str
-    id: int
+from ..base import Endpoint, FrozenModel, HTTPMethod, PerPage, ResponseModel
+from .ids import (
+    FolderId,
+    OrganizationId,
+    PersonId,
+    PlanId,
+    PlanPersonId,
+    ServiceTypeId,
+    TeamId,
+)
 
 
 class PersonRelationship(FrozenModel):
     """Person relationship."""
 
-    created_by: Data | None = None
-    updated_by: Data
-    current_folder: Data
+    created_by: PersonId | None = None
+    updated_by: PersonId | None = None
+    current_folder: FolderId
 
 
 class PersonAttributes(FrozenModel):
@@ -75,30 +75,29 @@ class PersonAttributes(FrozenModel):
 class PersonLinks(FrozenModel):
     """Person links."""
 
-    assign_tags: str
-    available_signups: str
-    blockouts: str
-    collapse_service_types: str
-    emails: str
-    expand_service_types: str
-    html: str
-    person_team_position_assignments: str
-    plan_people: str
-    schedules: str
-    scheduling_preferences: str
-    self: str
-    tags: str
-    team_leaders: str
-    text_settings: str
+    assign_tags: str | None = None
+    available_signups: str | None = None
+    blockouts: str | None = None
+    collapse_service_types: str | None = None
+    emails: str | None = None
+    expand_service_types: str | None = None
+    html: str | None = None
+    person_team_position_assignments: str | None = None
+    plan_people: str | None = None
+    schedules: str | None = None
+    scheduling_preferences: str | None = None
+    self: str | None = None
+    tags: str | None = None
+    team_leaders: str | None = None
+    text_settings: str | None = None
 
 
 class Person(ResponseModel):
     """A person added to Planning Center Services."""
 
-    id: int
     attributes: PersonAttributes
     relationships: PersonRelationship
-    links: PersonLinks
+    links: PersonLinks | None = None
 
 
 class BlockoutAttributes(FrozenModel):
@@ -144,30 +143,99 @@ class BlockoutAttributes(FrozenModel):
 class BlockoutRelationship(FrozenModel):
     """Blockout relationship."""
 
-    person: Data
-    organization: Data
+    person: PersonId
+    organization: OrganizationId
 
 
 class Blockout(ResponseModel):
     """An object representing a blockout date, and an optional recurrence pattern."""
 
-    id: int
     attributes: BlockoutAttributes
     relationships: BlockoutRelationship
 
 
-class People(Endpoint):
+class EmailAttributes(FrozenModel):
+    """Email attributes."""
+
+    primary: bool
+    address: str
+
+
+class Email(ResponseModel):
+    """An email address for a person."""
+
+    attributes: EmailAttributes
+
+
+class ScheduleAttributes(FrozenModel):
+    """Schedule attributes."""
+
+    sort_date: datetime.datetime
+    dates: str
+    decline_reason: str | None
+    organization_name: str
+    organization_time_zone: str
+    organization_twenty_four_hour_time: bool
+    person_name: str
+    position_display_times: str | None
+    responds_to_name: str
+    service_type_name: str
+    short_dates: str
+    status: str
+    team_name: str
+    team_position_name: str
+    can_accept_partial: bool
+    can_accept_partial_one_time: bool
+    can_rehearse: bool
+
+    plan_visible: bool
+    """True if the scheduled Plan is visible to the scheduled Person."""
+
+    plan_visible_to_me: bool
+    """True if the scheduled Plan is visible to the current Person."""
+
+
+class ScheduleRelationship(FrozenModel):
+    """Schedule relationship."""
+
+    person: PersonId
+    service_type: ServiceTypeId
+    organization: OrganizationId
+    plan_person: PlanPersonId
+    plan: PlanId
+    team: TeamId
+    responds_to_person: PersonId | None = None
+
+
+class Schedule(ResponseModel):
+    """An instance of a PlanPerson with included data for displaying in a user's
+    schedule.
+    """
+
+    attributes: ScheduleAttributes
+    relationships: ScheduleRelationship
+
+
+type PersonInclude = Literal["emails", "tags", "team_leaders"]
+
+
+class People(Endpoint[Person]):
     """People endpoint."""
 
-    @HTTPMethod.GET(root=True)
-    def get(self, person_id: int, /) -> Person:
+    def get(
+        self,
+        person_id: int,
+        /,
+        *,
+        include: PersonInclude | None = None,
+    ) -> Person:
         """Get a person."""
 
-    @HTTPMethod.GET(root=True)
     def list_all(
         self,
         *,
-        order_by: Literal[
+        include: PersonInclude | None = None,
+        order: Literal[
             "created_at",
             "first_name",
             "last_name",
@@ -178,7 +246,7 @@ class People(Endpoint):
             "-updated_at",
         ]
         | None = None,
-        per_page: Annotated[int, Field(ge=1, le=100)] = 25,
+        per_page: PerPage = 25,
     ) -> list[Person]:
         """Get all people."""
 
@@ -191,3 +259,25 @@ class People(Endpoint):
         filter: Literal["past", "future"] | None = None,
     ) -> list[Blockout]:
         """Get blockouts for a person."""
+
+    @HTTPMethod.GET
+    def emails(
+        self,
+        person_id: int,
+        /,
+        *,
+        per_page: PerPage = 25,
+    ) -> list[Email]:
+        """Get emails for a person."""
+
+    @HTTPMethod.GET
+    def schedules(
+        self,
+        person_id: int,
+        /,
+        *,
+        include: Literal["plan_times"] | None = None,
+        order: Literal["starts_at", "-starts_at"] | None = None,
+        per_page: PerPage = 25,
+    ) -> list[Schedule]:
+        """Get schedules for a person."""

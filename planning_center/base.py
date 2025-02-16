@@ -1,31 +1,30 @@
 """API wrapper base class."""
 
+from __future__ import annotations
+
+import abc
 import enum
 import functools
 import http
+import inspect
 from collections.abc import Callable
-from typing import Any, NotRequired, Self, TypedDict, cast, overload
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    NotRequired,
+    Self,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+)
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter, model_validator, validate_call
+from pydantic import BaseModel, ConfigDict, Field, model_validator, validate_call
+from pydantic.alias_generators import to_snake
 from pypco import PCO
 
 from ._typing import P, R, get_return_type
-
-
-class App:
-    """Base class for planning center app."""
-
-    def __init__(self, pco: PCO) -> None:
-        """Initialize app."""
-        self._pco = pco
-
-
-class Endpoint:
-    """Base class for planning center endpoint."""
-
-    def __init__(self, app: App) -> None:
-        """Initialize endpoint."""
-        self._app = app
 
 
 class DataDict(TypedDict):
@@ -77,6 +76,8 @@ class FrozenModel(BaseModel):
 class ResponseModel(FrozenModel):
     """Response model with generic validation."""
 
+    id: int
+
     @model_validator(mode="before")
     @classmethod
     def _get_relationships(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -92,6 +93,80 @@ class ResponseModel(FrozenModel):
     def get(cls, id: int) -> Self:
         """Get an instance of self by id."""
         # TODO: implement
+
+
+class _OutputParser(Generic[R]):
+    def __init__(
+        self,
+        method: HTTPMethod,
+        root: bool,
+        func: Callable[P, R],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        self.endpoint = cast(Endpoint, args[0])
+        self.method = method
+        self.root = root
+        self.func = func
+        self.args = args
+        self.kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+    @property
+    def app(self) -> App:
+        return self.endpoint._app
+
+    @property
+    def query_params(self) -> dict[str, Any]:
+        """Extra query params that are filters."""
+        if (kwargs := self.kwargs) and (
+            abstract_method := getattr(Endpoint, self.func.__name__, None)
+        ):
+            return {
+                k: v
+                for k, v in kwargs.items()
+                if v not in inspect.signature(abstract_method).parameters
+            }
+
+        return kwargs
+
+    @staticmethod
+    def _get_next(response: Response) -> str | None:
+        return response["links"].get("next")
+
+    def _call_api(self, url: str) -> Response:
+        query_params = self.query_params
+        return self.app._pco.request_json(
+            self.method.value,
+            url,
+            **{k: v for k, v in self.kwargs.items() if v not in query_params}
+            | {f"where[{k}]": v for k, v in query_params.items()},
+        )
+
+    def _get_response(self) -> Response:
+        url_parts = [
+            to_snake(type(self.app).__name__),
+            "v2",
+            to_snake(type(self.endpoint).__name__),
+            *(str(arg) for arg in self.args[1:]),
+        ]
+
+        if not self.root:
+            url_parts.append(self.func.__name__)
+
+        return self._call_api((sep := "/") + sep.join(url_parts))
+
+    def run(self: _OutputParser[R]) -> R:
+        response = self._get_response()
+        result = response["data"]
+
+        if (isinstance(result, list)) and (next_page := self._get_next(response)):
+            while next_page is not None:
+                next_response = self._call_api(next_page)
+                result.extend(next_response["data"])
+                next_page = self._get_next(next_response)
+
+        # Convert result to annotated BaseModel
+        return result
 
 
 class HTTPMethod(enum.Enum):
@@ -116,10 +191,6 @@ class HTTPMethod(enum.Enum):
         """String representation of method."""
         return str(self.value)
 
-    @staticmethod
-    def _get_next(response: Response) -> str | None:
-        return response["links"].get("next")
-
     @overload
     def __call__(self, _func: Callable[P, R]) -> Callable[P, R]: ...
 
@@ -135,47 +206,56 @@ class HTTPMethod(enum.Enum):
         """Decorate a method to run the corresponding HTTP method."""
 
         def decorator(func: Callable[P, R]) -> Callable[P, R]:
-            @validate_call
+            @validate_call(validate_return=True)
             @functools.wraps(func)
             def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                endpoint = cast(Endpoint, args[0])
-                app = endpoint._app
-
-                def _run_it(url: str) -> Response:
-                    return app._pco.request_json(
-                        self.value,
-                        url,
-                        **{k: v for k, v in kwargs.items() if v is not None},
-                    )
-
-                url_parts = [
-                    type(app).__name__.lower(),
-                    "v2",
-                    type(endpoint).__name__.lower(),
-                    *(str(arg) for arg in args[1:]),
-                ]
-
-                if not root:
-                    url_parts.append(func.__name__.lower())
-
-                response = _run_it((sep := "/") + sep.join(url_parts))
-                result = response["data"]
-
-                if (isinstance(result, list)) and (
-                    next_page := self._get_next(response)
-                ):
-                    while next_page is not None:
-                        next_response = _run_it(next_page)
-                        result.extend(next_response["data"])
-                        next_page = self._get_next(next_response)
-
-                # Convert result to annotated BaseModel
-                adapter = TypeAdapter(get_return_type(func))
-                return cast(R, adapter.validate_python(result))
+                output_parser = _OutputParser(self, root, func, *args, **kwargs)
+                return output_parser.run()
 
             return wrapper
 
         return decorator(_func) if _func else decorator
+
+
+class App:
+    """Base class for planning center app."""
+
+    def __init__(self, pco: PCO) -> None:
+        """Initialize app."""
+        self._pco = pco
+
+
+M = TypeVar("M", bound=ResponseModel)
+
+
+type PerPage = Annotated[int, Field(ge=1, le=100)]
+
+
+class Endpoint(Generic[M]):
+    """Base class for planning center endpoint."""
+
+    def __init__(self, app: App) -> None:
+        """Initialize endpoint."""
+        self._app = app
+
+    def __init_subclass__(cls) -> None:
+        """Decorate certain methods in subclass."""
+        super().__init_subclass__()
+        cls.get = HTTPMethod.GET(root=True)(cls.get)  # type: ignore[method-assign]
+        cls.list_all = HTTPMethod.GET(root=True)(cls.list_all)  # type: ignore[method-assign]
+
+    @abc.abstractmethod
+    def get(self, id: int, /, *, include: str | None = None) -> M:
+        """Get an item by id."""
+
+    @abc.abstractmethod
+    def list_all(
+        self,
+        include: str | None = None,
+        order: str | None = None,
+        per_page: PerPage = 25,
+    ) -> list[M]:
+        """List all items."""
 
 
 class endpoint_property(property):  # noqa: N801
