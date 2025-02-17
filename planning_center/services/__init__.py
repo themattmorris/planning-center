@@ -5,6 +5,7 @@ https://developer.planning.center/docs/#/apps/services/2018-11-01) API.
 from ..base import App, endpoint_property
 from .people import People
 from .service_types import ServiceTypes
+from .teams import Teams
 
 
 class Services(App):
@@ -17,3 +18,7 @@ class Services(App):
     @endpoint_property
     def service_types(self) -> ServiceTypes:
         """Service types API wrapper."""
+
+    @endpoint_property
+    def teams(self) -> Teams:
+        """Teams API wrapper."""

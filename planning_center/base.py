@@ -124,10 +124,10 @@ class _OutputParser(Generic[R]):
             return {
                 k: v
                 for k, v in kwargs.items()
-                if v not in inspect.signature(abstract_method).parameters
+                if k not in inspect.signature(abstract_method).parameters
             }
 
-        return kwargs
+        return {}
 
     @staticmethod
     def _get_next(response: Response) -> str | None:
@@ -138,7 +138,7 @@ class _OutputParser(Generic[R]):
         return self.app._pco.request_json(
             self.method.value,
             url,
-            **{k: v for k, v in self.kwargs.items() if v not in query_params}
+            **{k: v for k, v in self.kwargs.items() if k not in query_params}
             | {f"where[{k}]": v for k, v in query_params.items()},
         )
 
@@ -165,7 +165,6 @@ class _OutputParser(Generic[R]):
                 result.extend(next_response["data"])
                 next_page = self._get_next(next_response)
 
-        # Convert result to annotated BaseModel
         return result
 
 
