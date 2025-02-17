@@ -13,7 +13,6 @@ from typing import (
     Any,
     Generic,
     NotRequired,
-    Self,
     TypedDict,
     TypeVar,
     cast,
@@ -88,11 +87,6 @@ class ResponseModel(FrozenModel):
             }
 
         return values
-
-    @classmethod
-    def get(cls, id: int) -> Self:
-        """Get an instance of self by id."""
-        # TODO: implement
 
 
 class _OutputParser(Generic[R]):
