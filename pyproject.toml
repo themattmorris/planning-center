@@ -88,7 +88,7 @@ select = [
   "UP",
   "W",
 ]
-ignore = ["A002", "D205"]
+ignore = ["A002", "D205", "PLR0913"]
 fixable = ["ALL"]
 pydocstyle.convention = "google"
 mccabe.max-complexity = 22

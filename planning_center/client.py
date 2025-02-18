@@ -27,7 +27,7 @@ class _Auth(BaseSettings):
 A = TypeVar("A", bound=App)
 
 
-class app_property(property, Generic[A]):  # noqa: N801
+class app(property, Generic[A]):  # noqa: N801
     """Property that returns an instance of the annotated type."""
 
     def __init__(
@@ -40,11 +40,7 @@ class app_property(property, Generic[A]):  # noqa: N801
         """Initialize property."""
         super().__init__(fget, fset, fdel, doc)
 
-    def __get__(
-        self: app_property[A],
-        instance: Client | None,
-        owner: type[Client],
-    ) -> A:
+    def __get__(self: app[A], instance: Client | None, owner: type[Client]) -> A:
         """Return the app type."""
         if instance:
             return_type: type[A] = get_return_type(self.fget)  # type: ignore[arg-type]
@@ -64,6 +60,6 @@ class Client:
             secret=auth.client_secret.get_secret_value(),
         )
 
-    @app_property
+    @app
     def services(self) -> Services:
         """Services API wrapper."""

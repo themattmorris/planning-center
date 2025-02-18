@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import model_validator
 
-from ..base import FrozenModel, ResponseModel
+from ..base import FrozenModel
 
 
 if TYPE_CHECKING:
@@ -39,10 +39,6 @@ class Data(FrozenModel):
 
         return Client().services
 
-    def load(self, *, include: str | None = None) -> ResponseModel:
-        """Load the metadata for the object ID."""
-        raise NotImplementedError
-
 
 class FolderId(Data):
     """Folder id."""
@@ -68,8 +64,16 @@ class PlanPersonId(Data):
     """Plan person id."""
 
 
+class PlanTimeId(Data):
+    """Plan time id."""
+
+
 class PersonTeamPositionAssignmentId(Data):
     """Person team position assignment id."""
+
+
+class BlockoutId(Data):
+    """Blockout id."""
 
 
 class SeriesId(Data):
@@ -94,3 +98,7 @@ class TeamId(Data):
 
 class SplitTeamRehearsalAssignmentId(Data):
     """Split team rehearsal assignment id."""
+
+
+class TimePreferenceOptionId(Data):
+    """Time preference option id."""

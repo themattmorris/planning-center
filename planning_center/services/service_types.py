@@ -9,7 +9,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Field
 
-from ..base import Endpoint, FrozenModel, HTTPMethod, PerPage, ResponseModel
+from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
 from .ids import (
     FolderId,
     PersonId,
@@ -140,6 +140,73 @@ class Plan(ResponseModel):
     relationships: PlanRelationship
 
 
+class Plans(Endpoint[Plan]):
+    """Plan endpoint."""
+
+    def get(
+        self,
+        service_type_id: int,
+        plan_id: int,
+        /,
+        *,
+        include: Literal[
+            "contributors",
+            "my_schedules",
+            "plan_times",
+            "series",
+        ]
+        | None = None,
+        order: Literal[
+            "created_at",
+            "sort_date",
+            "title",
+            "updated_at",
+            "-created_at",
+            "-sort_date",
+            "-title",
+            "-updated_at",
+        ]
+        | None = None,
+        created_at: datetime.datetime | None = None,
+        series_title: str | None = None,
+        title: str | None = None,
+        updated_at: datetime.datetime | None = None,
+    ) -> Plan:
+        """Get a plan."""
+
+    def list_all(
+        self,
+        service_type_id: int,
+        /,
+        *,
+        include: Literal[
+            "contributors",
+            "my_schedules",
+            "plan_times",
+            "series",
+        ]
+        | None = None,
+        order: Literal[
+            "created_at",
+            "sort_date",
+            "title",
+            "updated_at",
+            "-created_at",
+            "-sort_date",
+            "-title",
+            "-updated_at",
+        ]
+        | None = None,
+        created_at: datetime.datetime | None = None,
+        series_title: str | None = None,
+        title: str | None = None,
+        updated_at: datetime.datetime | None = None,
+        filter: Literal["future", "no_dates", "past"] | None = None,
+        per_page: PerPage = 25,
+    ) -> list[Plan]:
+        """Get all plans."""
+
+
 class TeamReminder(FrozenModel):
     """Team reminder."""
 
@@ -196,6 +263,60 @@ class PlanTime(ResponseModel):
     relationships: PlanTimeRelationship
 
 
+type PlanTimeInclude = Literal["split_team_rehearsal_assignments"]
+
+
+class PlanTimes(Endpoint[PlanTime]):
+    """Plan time endpoint."""
+
+    def get(
+        self,
+        plan_time_id: int,
+        /,
+        *,
+        include: PlanTimeInclude | None = None,
+        time_type: TimeType | None = None,
+    ) -> PlanTime:
+        """Get a plan time."""
+
+    def list_all(
+        self,
+        *,
+        include: PlanTimeInclude | None = None,
+        order: Literal["starts_at", "-starts_at"] | None = None,
+        time_type: TimeType | None = None,
+        per_page: PerPage = 25,
+    ) -> list[PlanTime]:
+        """Get plan times for a service type."""
+
+    def create(
+        self,
+        *,
+        starts_at: datetime.datetime,
+        ends_at: datetime.datetime,
+        name: str | None = None,
+        time_type: TimeType | None = None,
+        team_reminders: list[TeamReminder] | None = None,
+    ) -> PlanTime:
+        """Create a plan time."""
+
+    def update(
+        self,
+        plan_time_id: int,
+        /,
+        *,
+        starts_at: datetime.datetime | None = None,
+        ends_at: datetime.datetime | None = None,
+        name: str | None = None,
+        time_type: TimeType | None = None,
+        team_reminders: list[TeamReminder] | None = None,
+    ) -> None:
+        """Update a plan time."""
+
+    def delete(self, plan_time_id: int, /) -> None:
+        """Delete a plan time."""
+
+
 class ServiceTypes(Endpoint[ServiceType]):
     """Service type endpoint."""
 
@@ -218,48 +339,10 @@ class ServiceTypes(Endpoint[ServiceType]):
     ) -> list[ServiceType]:
         """List all service types."""
 
-    @HTTPMethod.GET
-    def plans(  # noqa: PLR0913
-        self,
-        service_type_id: int,
-        /,
-        *,
-        include: Literal[
-            "contributors",
-            "my_schedules",
-            "plan_times",
-            "series",
-        ]
-        | None = None,
-        order: Literal[
-            "created_at",
-            "sort_date",
-            "title",
-            "updated_at",
-            "-created_at",
-            "-sort_date",
-            "-title",
-            "-updated_at",
-        ]
-        | None = None,
-        filter: Literal["future", "no_dates", "past"] | None = None,
-        per_page: PerPage = 25,
-        created_at: datetime.datetime | None = None,
-        series_title: str | None = None,
-        title: str | None = None,
-        updated_at: datetime.datetime | None = None,
-    ) -> list[Plan]:
-        """Get plans for a service type."""
+    @endpoint
+    def plans(self) -> Plans:
+        """Plan endpoint."""
 
-    @HTTPMethod.GET
-    def plan_times(
-        self,
-        service_type_id: int,
-        /,
-        *,
-        include: Literal["split_team_rehearsal_assignments"] | None = None,
-        order: Literal["starts_at", "-starts_at"] | None = None,
-        time_type: TimeType | None = None,
-        per_page: PerPage = 25,
-    ) -> list[PlanTime]:
-        """Get plan times for a service type."""
+    @endpoint
+    def plan_times(self) -> PlanTimes:
+        """Plan time endpoint."""
