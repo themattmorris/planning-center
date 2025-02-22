@@ -212,7 +212,9 @@ class Blockouts(Endpoint[Blockout]):
 
     @endpoint
     def blockout_dates(self) -> BlockoutDates:
-        """Blockout dates endpoint."""
+        """[Blockout dates endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/blockout_date).
+        """
 
 
 class EmailAttributes(FrozenModel):
@@ -422,16 +424,24 @@ class People(Endpoint[Person]):
 
     @endpoint
     def blockouts(self) -> Blockouts:
-        """Blockouts endpoint."""
+        """[Blockouts endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/blockout).
+        """
 
     @endpoint
     def emails(self) -> Emails:
-        """Emails endpoint."""
+        """[Emails endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/email).
+        """
 
     @endpoint
     def schedules(self) -> Schedules:
-        """Schedules endpoint."""
+        """[Schedules endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/schedule).
+        """
 
     @endpoint
     def plan_people(self) -> PlanPeople:
-        """PlanPeople endpoint."""
+        """[PlanPeople endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_person).
+        """

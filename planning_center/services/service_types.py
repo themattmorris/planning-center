@@ -1,5 +1,5 @@
 """[Service type endpoint](
-https://developer.planning.cente"=r/docs/#/apps/services/2018-11-01/vertices/service_type).
+https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/service_type).
 """
 
 from __future__ import annotations
@@ -145,7 +145,6 @@ class Plans(Endpoint[Plan]):
 
     def get(
         self,
-        service_type_id: int,
         plan_id: int,
         /,
         *,
@@ -176,8 +175,6 @@ class Plans(Endpoint[Plan]):
 
     def list_all(
         self,
-        service_type_id: int,
-        /,
         *,
         include: Literal[
             "contributors",
@@ -341,8 +338,12 @@ class ServiceTypes(Endpoint[ServiceType]):
 
     @endpoint
     def plans(self) -> Plans:
-        """Plan endpoint."""
+        """[Plan endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan).
+        """
 
     @endpoint
     def plan_times(self) -> PlanTimes:
-        """Plan time endpoint."""
+        """[Plan time endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_time).
+        """

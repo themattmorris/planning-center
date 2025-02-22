@@ -201,7 +201,9 @@ class _UpdateCaller(_BaseCaller):
         return {
             "data": {
                 "attributes": self.kwargs,
-                "type": get_args(get_original_bases(self.endpoint)[0])[0],  # type: ignore[arg-type]
+                "type": (
+                    get_args(get_original_bases(type(self.endpoint))[0])[0].__name__
+                ),
             }
             | self.extra_payload_data
         }
