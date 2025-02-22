@@ -135,18 +135,18 @@ class _BaseCaller(Generic[R]):
         return response["links"].get("next")
 
     def _get_response(self) -> Response:
-        args = self.args
-        endpoint_parts: list[str] = []
-        url_args = [*reversed(self.endpoint._ids), *args[1:]]
+        url_args: list[str] = []
 
-        for i, parent in enumerate(
-            reversed([(endpoint := self.endpoint), *endpoint._endpoints])
-        ):
-            endpoint_parts.append(to_snake(type(parent).__name__))
-            if len(url_args) >= (i + 1):
-                endpoint_parts.append(str(url_args[i]))
+        for parent in self.endpoint._parents:
+            url_args.extend([parent.endpoint.name, str(parent.id)])
 
-        url_parts = [to_snake(type(self.app).__name__), "v2", *endpoint_parts]
+        url_parts = [
+            self.app.name,
+            "v2",
+            *url_args,
+            self.endpoint.name,
+            *[str(arg) for arg in self.args[1:]],
+        ]
 
         if not self.root:
             url_parts.append(self.func.__name__)
@@ -279,7 +279,17 @@ class HTTPMethod(enum.Enum):
         return decorator(_func) if _func else decorator
 
 
-class App:
+def _to_url_name(value: Any) -> str:
+    return to_snake(value.__name__)
+
+
+class _EndpointBase:
+    @property
+    def name(self) -> str:
+        return _to_url_name(type(self))
+
+
+class App(_EndpointBase):
     """Base class for planning center app."""
 
     def __init__(self, pco: PCO) -> None:
@@ -293,23 +303,18 @@ M = TypeVar("M", bound=ResponseModel)
 type PerPage = Annotated[int, Field(ge=1, le=100)]
 
 
-class Endpoint(Generic[M]):
+class Endpoint(_EndpointBase, Generic[M]):
     """Base class for planning center endpoint."""
 
-    def __init__(
-        self,
-        app: App,
-        *endpoints: Endpoint,
-        ids: list[int] | None = None,
-    ) -> None:
+    def __init__(self, app: App, *parents: _Parent) -> None:
         """Initialize endpoint."""
         self._app = app
-        self._endpoints = endpoints
-        self._ids = ids or []
+        self._parents = list(parents)
 
     def __call__(self, id: int) -> Self:
         """Get an item by id."""
-        return type(self)(self._app, *self._endpoints, ids=[id, *self._ids])
+        self._parents.append(_Parent(endpoint=self, id=id))
+        return self
 
     def __init_subclass__(cls) -> None:
         """Decorate certain methods in subclass."""
@@ -359,16 +364,27 @@ class endpoint(property):  # noqa: N801
         instance: App | Endpoint | None,
         owner: type[App | Endpoint],
     ) -> Endpoint:
-        """Return the app type."""
+        """Return the app/endpoint type."""
         if instance:
             return_type: type[Endpoint] = get_return_type(self.fget)  # type: ignore[arg-type]
             if isinstance(instance, App):
                 return return_type(instance)
 
-            return return_type(
-                instance._app,
-                instance,
-                *instance._endpoints,
-                ids=instance._ids,
-            )
+            # Ensure that the parent endpoint id has been provided.
+            parents = instance._parents
+            if not any(isinstance(parent.endpoint, owner) for parent in parents):
+                message = (
+                    f"Must provide ID for {(name := _to_url_name(owner))} endpoint. "
+                    f"Hint: `.{name}(12345).{_to_url_name(return_type)}`"
+                )
+                raise ValueError(message)
+
+            return return_type(instance._app, *parents)
         return super().__get__(instance, owner)
+
+
+class _Parent(FrozenModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    endpoint: Endpoint
+    id: int

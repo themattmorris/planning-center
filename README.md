@@ -23,4 +23,10 @@ person = c.services.people.get(person_id)
 
 # Look at blockouts for a specific person
 blockouts = c.services.people(person_id).blockouts.list_all()
+
+# Look at blockout dates for a specific blockout
+blockout_id = 67890
+blockout_dates = c.services.people(person_id).blockouts(blockout_id).blockout_dates.list_all()
+
+# etc...
 ```

@@ -199,7 +199,7 @@ class BlockoutDates(Endpoint[BlockoutDate]):
 class Blockouts(Endpoint[Blockout]):
     """Blockouts endpoint."""
 
-    def get(self, blockout_id: int) -> Blockout:
+    def get(self, blockout_id: int, /) -> Blockout:
         """Get a blockout."""
 
     def list_all(
