@@ -6,7 +6,7 @@ import datetime
 from typing import Literal
 
 from ..base import Endpoint, FrozenModel, PerPage, ResponseModel
-from .ids import PersonId, PersonTeamPositionAssignmentId, ServiceTypeId
+from ..ids import PersonId, PersonTeamPositionAssignmentId, ServiceTypeId
 
 
 class TeamRelationship(FrozenModel):

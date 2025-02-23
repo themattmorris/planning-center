@@ -11,6 +11,7 @@ from pypco import PCO
 
 from ._typing import get_return_type
 from .base import App
+from .groups import Groups
 from .services import Services
 from .utils import singleton
 
@@ -63,3 +64,7 @@ class Client:
     @app
     def services(self) -> Services:
         """Services API wrapper."""
+
+    @app
+    def groups(self) -> Groups:
+        """Groups API wrapper."""

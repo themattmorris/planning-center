@@ -10,7 +10,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field
 
 from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
-from .ids import (
+from ..ids import (
     FolderId,
     PersonId,
     PlanId,

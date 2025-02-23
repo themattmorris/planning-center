@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import model_validator
 
-from ..base import FrozenModel
+from .base import FrozenModel
 
 
 if TYPE_CHECKING:
-    from . import Services
-    from .people import Person, PersonInclude
-    from .service_types import ServiceType, ServiceTypeInclude
-    from .teams import Team, TeamInclude
+    from .services import Services
+    from .services.people import Person, PersonInclude
+    from .services.service_types import ServiceType, ServiceTypeInclude
+    from .services.teams import Team, TeamInclude
 
 
 class Data(FrozenModel):
@@ -35,7 +35,7 @@ class Data(FrozenModel):
 
     @property
     def _services(self) -> Services:
-        from ..client import Client
+        from .client import Client
 
         return Client().services
 
@@ -102,3 +102,15 @@ class SplitTeamRehearsalAssignmentId(Data):
 
 class TimePreferenceOptionId(Data):
     """Time preference option id."""
+
+
+class GroupTypeId(Data):
+    """Group type ID."""
+
+
+class LocationId(Data):
+    """Location ID."""
+
+
+class EnrollmentId(Data):
+    """Enrollment ID."""

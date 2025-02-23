@@ -13,12 +13,18 @@ class Services(App):
 
     @endpoint
     def people(self) -> People:
-        """People API wrapper."""
+        """[People endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/person).
+        """
 
     @endpoint
     def service_types(self) -> ServiceTypes:
-        """Service types API wrapper."""
+        """[Service types endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/service_type).
+        """
 
     @endpoint
     def teams(self) -> Teams:
-        """Teams API wrapper."""
+        """[Teams endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/team).
+        """
