@@ -6,7 +6,7 @@ import datetime
 from typing import Literal
 
 from ..base import Endpoint, FrozenModel, PerPage, ResponseModel
-from ..ids import EnrollmentId, GroupTypeId, LocationId
+from .ids import EnrollmentId, GroupTypeId, LocationId
 
 
 class GroupRelationship(FrozenModel):
@@ -42,9 +42,8 @@ class GroupAttributes(FrozenModel):
     description: str
     """A longform description of the group. Can contain HTML markup."""
 
-    events_visibility: str
-    """The visibility of events for the group.
-    Possible values: public or members"""
+    events_visibility: Literal["public", "members"]
+    """The visibility of events for the group. Possible values: public or members"""
 
     header_image: dict[str, str]
     """A hash of header image URLs. The keys are thumbnail, medium, and original."""

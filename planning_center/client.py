@@ -12,6 +12,7 @@ from pypco import PCO
 from ._typing import get_return_type
 from .base import App
 from .groups import Groups
+from .people import People
 from .services import Services
 from .utils import singleton
 
@@ -63,8 +64,12 @@ class Client:
 
     @app
     def services(self) -> Services:
-        """Services API wrapper."""
+        """[Services](https://developer.planning.center/docs/#/apps/services) API wrapper."""  # noqa: E501
 
     @app
     def groups(self) -> Groups:
-        """Groups API wrapper."""
+        """[Groups](https://developer.planning.center/docs/#/apps/groups) API wrapper."""  # noqa: E501
+
+    @app
+    def people(self) -> People:
+        """[People](https://developer.planning.center/docs/#/apps/people) API wrapper."""  # noqa: E501

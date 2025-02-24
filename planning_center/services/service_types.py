@@ -5,12 +5,12 @@ https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/servi
 from __future__ import annotations
 
 import datetime
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, TypedDict, Unpack
 
 from pydantic import Field
 
 from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
-from ..ids import (
+from .ids import (
     FolderId,
     PersonId,
     PlanId,
@@ -263,6 +263,16 @@ class PlanTime(ResponseModel):
 type PlanTimeInclude = Literal["split_team_rehearsal_assignments"]
 
 
+class PlanTimesParams(TypedDict, total=False):
+    """Parameters for creating or updating a plan time."""
+
+    starts_at: datetime.datetime
+    ends_at: datetime.datetime
+    name: str
+    time_type: TimeType
+    team_reminders: list[TeamReminder]
+
+
 class PlanTimes(Endpoint[PlanTime]):
     """Plan time endpoint."""
 
@@ -286,28 +296,15 @@ class PlanTimes(Endpoint[PlanTime]):
     ) -> list[PlanTime]:
         """Get plan times for a service type."""
 
-    def create(
-        self,
-        *,
-        starts_at: datetime.datetime,
-        ends_at: datetime.datetime,
-        name: str | None = None,
-        time_type: TimeType | None = None,
-        team_reminders: list[TeamReminder] | None = None,
-    ) -> PlanTime:
+    def create(self, **kwargs: Unpack[PlanTimesParams]) -> PlanTime:
         """Create a plan time."""
 
     def update(
         self,
         plan_time_id: int,
         /,
-        *,
-        starts_at: datetime.datetime | None = None,
-        ends_at: datetime.datetime | None = None,
-        name: str | None = None,
-        time_type: TimeType | None = None,
-        team_reminders: list[TeamReminder] | None = None,
-    ) -> None:
+        **kwargs: Unpack[PlanTimesParams],
+    ) -> PlanTime:
         """Update a plan time."""
 
     def delete(self, plan_time_id: int, /) -> None:

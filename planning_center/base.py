@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import datetime
 import enum
 import functools
 import http
@@ -119,6 +120,9 @@ class _BaseCaller(Generic[R]):
 
         if isinstance(value, BaseModel):
             return value.model_dump(by_alias=True, exclude_none=True)
+
+        if isinstance(value, datetime.date):
+            return value.isoformat()
 
         return value
 
@@ -346,11 +350,11 @@ class Endpoint(_EndpointBase, Generic[M]):
         """List all items."""
 
     @abc.abstractmethod
-    def update(self, *args: int, **kwargs: Any) -> None:
+    def update(self, *args: int, **kwargs: Any) -> M:
         """Update an item."""
 
     @abc.abstractmethod
-    def create(self, **kwargs: Any) -> None:
+    def create(self, **kwargs: Any) -> M:
         """Create an item."""
 
     @abc.abstractmethod
@@ -390,3 +394,21 @@ class _Parent(FrozenModel):
 
     endpoint: Endpoint
     id: int
+
+
+class Data(FrozenModel):
+    """Data about a related attribute."""
+
+    id: int
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_type(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Remove the type from the data."""
+        if (data_type := values.pop("type", None)) and (
+            data_type != (expected := cls.__name__.removesuffix("Id"))
+        ):
+            message = f"Expected type {expected!r} but got {data_type!r}."
+            raise ValueError(message)
+
+        return values

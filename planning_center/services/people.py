@@ -6,7 +6,7 @@ import datetime
 from typing import Any, Literal
 
 from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
-from ..ids import (
+from .ids import (
     BlockoutId,
     FolderId,
     OrganizationId,
