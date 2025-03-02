@@ -2,7 +2,7 @@
 
 from ..base import App, endpoint
 from .groups import Groups as GroupsEndpoint
-from .people import People
+from .groups import People
 
 
 class Groups(App):

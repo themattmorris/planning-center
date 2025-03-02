@@ -102,4 +102,4 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 plugins = "pydantic.mypy"
 explicit_package_bases = true
-disable_error_code = ["empty-body", "override"]
+disable_error_code = ["empty-body", "override", "misc"]

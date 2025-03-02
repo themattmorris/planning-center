@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..base import Data
+from ..base import Related
 
 
 if TYPE_CHECKING:
     from . import People
 
 
-class _PeopleId(Data):
+class _PeopleId(Related):
     @property
     def _groups(self) -> People:
         from ..client import Client

@@ -4,19 +4,23 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..base import Data
+from ..base import Related
 
 
 if TYPE_CHECKING:
     from . import Groups
 
 
-class _GroupsId(Data):
+class _GroupsId(Related):
     @property
     def _groups(self) -> Groups:
         from ..client import Client
 
         return Client().groups
+
+
+class GroupId(_GroupsId):
+    """Group ID."""
 
 
 class GroupTypeId(_GroupsId):
@@ -29,3 +33,7 @@ class LocationId(_GroupsId):
 
 class EnrollmentId(_GroupsId):
     """Enrollment ID."""
+
+
+class PersonId(_GroupsId):
+    """Person ID."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..base import Data
+from ..base import Related
 
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .teams import Team, TeamInclude
 
 
-class _ServicesId(Data):
+class _ServicesId(Related):
     @property
     def _services(self) -> Services:
         from ..client import Client

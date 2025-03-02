@@ -3,10 +3,224 @@ https://developer.planning.center/docs/#/apps/groups/2023-07-10/vertices/group).
 """
 
 import datetime
-from typing import Literal
+from typing import Literal, overload
 
-from ..base import Endpoint, FrozenModel, PerPage, ResponseModel
-from .ids import EnrollmentId, GroupTypeId, LocationId
+from pydantic import Field
+
+from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
+from .ids import EnrollmentId, GroupId, GroupTypeId, LocationId, PersonId
+
+
+type Role = Literal["member", "leader"]
+
+
+class Address(FrozenModel):
+    """Address attributes."""
+
+    city: str
+    line_1: str
+    line_2: str | None = None
+    location: str
+    state: str
+    street: str
+    street_line_1: str
+    street_line_2: str | None = None
+    zip: str | None = Field(pattern=r"^\d{5}(-\d{4})?$", default=None)
+
+
+class Email(FrozenModel):
+    """Email attributes."""
+
+    address: str
+    location: str
+    primary: bool
+
+
+class PhoneNumber(FrozenModel):
+    """Phone number attributes."""
+
+    number: str
+    carrier: str | None = None
+    location: str
+    primary: bool
+
+
+class PersonAttributes(FrozenModel):
+    """Person attributes."""
+
+    addresses: list[Address]
+    """Returns all the addresses associated with this person."""
+
+    avatar_url: str
+    """The URL of the person's avatar."""
+
+    child: bool | None = None
+    """Whether or not the person is under 13 years old. This is false if a birthdate is
+    not set. Only available when requested with the ?fields param"""
+
+    created_at: datetime.datetime
+    """Date and time this person was first created in Planning Center"""
+
+    email_addresses: list[Email]
+    """Returns all the email addresses associated with this person."""
+
+    first_name: str
+    """The person's first name."""
+
+    last_name: str
+    """The person's last name."""
+
+    permissions: str
+    """Can be administrator, group_type_manager, leader, member, or no access."""
+
+    phone_numbers: list[PhoneNumber]
+    """Returns all the phone numbers associated with this person."""
+
+
+class Person(ResponseModel):
+    """A person is a user of Planning Center. They can be a member of a group, a leader
+    of a group, or an administrator.
+    """
+
+    attributes: PersonAttributes
+
+
+class MembershipAttributes(FrozenModel):
+    """Membership attributes."""
+
+    joined_at: datetime.datetime
+    role: Role
+
+
+class MembershipRelationship(FrozenModel):
+    """Membership relationship."""
+
+    group: GroupId | None = None
+    person: PersonId | None = None
+
+
+class Membership(ResponseModel):
+    """The state of a Person belonging to a Group. A Person can only have one active
+    Membership to a Group at a time.
+    """
+
+    attributes: MembershipAttributes
+    relationships: MembershipRelationship
+
+
+class MembershipPersonIncluded(Membership):
+    """Membership with people included."""
+
+    included: Person
+
+
+type MembershipInclude = Literal["person"]
+
+
+class Memberships(Endpoint[Membership]):
+    """A membership of a person in a group."""
+
+    @overload
+    def get(
+        self,
+        membership_id: int,
+        /,
+        *,
+        include: Literal["person"],
+    ) -> MembershipPersonIncluded: ...
+
+    @overload
+    def get(self, membership_id: int, /) -> Membership: ...
+
+    def get(
+        self,
+        membership_id: int,
+        /,
+        *,
+        include: MembershipInclude | None = None,
+    ) -> MembershipPersonIncluded | Membership:
+        """Get a membership."""
+
+    @overload
+    def list_all(
+        self,
+        *,
+        include: Literal["person"],
+        order: Literal[
+            "first_name",
+            "joined_at",
+            "last_name",
+            "role",
+            "-first_name",
+            "-joined_at",
+            "-last_name",
+            "-role",
+        ]
+        | None = None,
+        role: Role | None = None,
+        per_page: PerPage = 25,
+    ) -> list[MembershipPersonIncluded]: ...
+
+    @overload
+    def list_all(
+        self,
+        *,
+        order: Literal[
+            "first_name",
+            "joined_at",
+            "last_name",
+            "role",
+            "-first_name",
+            "-joined_at",
+            "-last_name",
+            "-role",
+        ]
+        | None = None,
+        role: Role | None = None,
+        per_page: PerPage = 25,
+    ) -> list[Membership]: ...
+
+    def list_all(
+        self,
+        *,
+        include: MembershipInclude | None = None,
+        order: Literal[
+            "first_name",
+            "joined_at",
+            "last_name",
+            "role",
+            "-first_name",
+            "-joined_at",
+            "-last_name",
+            "-role",
+        ]
+        | None = None,
+        role: Role | None = None,
+        per_page: PerPage = 25,
+    ) -> list[MembershipPersonIncluded | Membership]:
+        """Get all memberships."""
+
+    def create(
+        self,
+        *,
+        person_id: int,
+        role: Role | None = None,
+        joined_at: datetime.datetime | None = None,
+    ) -> Membership:
+        """Create a membership."""
+
+    def update(
+        self,
+        membership_id: int,
+        /,
+        *,
+        joined_at: datetime.datetime | None = None,
+        role: Role | None = None,
+    ) -> Membership:
+        """Update a membership."""
+
+    def delete(self, membership_id: int, /) -> None:
+        """Delete a membership."""
 
 
 class GroupRelationship(FrozenModel):
@@ -106,3 +320,38 @@ class Groups(Endpoint[Group]):
         per_page: PerPage = 25,
     ) -> list[Group]:
         """Get all groups."""
+
+    @endpoint
+    def memberships(self) -> Memberships:
+        """[Memberships endpoint](
+        https://developer.planning.center/docs/#/apps/groups/2023-07-10/vertices/membership).
+        """
+
+
+class People(Endpoint[Person]):
+    """People endpoint."""
+
+    def get(self, person_id: int, /) -> Person:
+        """Get a person."""
+
+    def list_all(
+        self,
+        *,
+        order: Literal[
+            "first_name",
+            "last_name",
+            "-first_name",
+            "-last_name",
+        ]
+        | None = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        per_page: PerPage = 25,
+    ) -> list[Person]:
+        """Get all people."""
+
+    @endpoint
+    def groups(self) -> Groups:
+        """[Groups endpoint](
+        https://developer.planning.center/docs/#/apps/groups/2023-07-10/vertices/group).
+        """

@@ -69,7 +69,7 @@ class Response(TypedDict):
 
     links: LinksDict
     data: Any
-    included: list[str]
+    included: list[dict[str, Any]] | dict[str, Any]
     meta: MetaDict
 
 
@@ -159,12 +159,27 @@ class _BaseCaller(Generic[R]):
 
     def run(self: _BaseCaller[R]) -> R:
         response = self._get_response()
-        result = response["data"]
+
+        # TODO: type the response dictionary
+        result = response[data_key := "data"]
+
+        if include := response.get(included_key := "included"):
+            if isinstance(include, list):
+                for included in include:
+                    for i, item in enumerate(result):
+                        item_key = item["relationships"][self.kwargs["include"]][
+                            data_key
+                        ][id_key := "id"]
+                        if included[id_key] == item_key:
+                            result[i][included_key] = included
+                            break
+            else:
+                result[included_key] = include
 
         if (isinstance(result, list)) and (next_page := self._get_next(response)):
             while next_page is not None:
                 next_response = self._call_api(next_page)
-                result.extend(next_response["data"])
+                result.extend(next_response[data_key])  # type: ignore[literal-required]
                 next_page = self._get_next(next_response)
 
         return result
@@ -396,7 +411,7 @@ class _Parent(FrozenModel):
     id: int
 
 
-class Data(FrozenModel):
+class Related(FrozenModel):
     """Data about a related attribute."""
 
     id: int
