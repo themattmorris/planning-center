@@ -11,14 +11,19 @@ from pydantic import Field
 
 from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
 from .ids import (
+    AttachmentTypeId,
     FolderId,
     PersonId,
     PlanId,
     SeriesId,
     ServiceTypeId,
     SplitTeamRehearsalAssignmentId,
+    TagId,
     TeamId,
+    TeamPositionId,
+    TimePreferenceOptionId,
 )
+from .people import Person
 from .teams import Team, TeamInclude
 
 
@@ -311,6 +316,175 @@ class PlanTimes(Endpoint[PlanTime]):
         """Delete a plan time."""
 
 
+class TeamPositionAttributes(FrozenModel):
+    """Team position attributes."""
+
+    name: str
+    sequence: int | None = None
+
+    tags: list[dict[str, str]] | None = None
+    """If the Team is assigned via tags, these are specific Tags that are specified."""
+
+    negative_tag_groups: list[dict[str, str]] | None = None
+    """If the Team is assigned via tags, these are Tags where the option "None" is
+    specified.
+    """
+
+    tag_groups: list[dict[str, str]] | None = None
+    """If the Team is assigned via tags, these are Tags where the option "Any" is
+    specified.
+    """
+
+
+class TeamPositionRelationships(FrozenModel):
+    """Team position relationships."""
+
+    team: TeamId
+    attachment_types: list[AttachmentTypeId] | None = None
+    tags: list[TagId] | None = None
+
+
+class TeamPosition(ResponseModel):
+    """Team position."""
+
+    attributes: TeamPositionAttributes
+    relationships: TeamPositionRelationships
+
+
+type SchedulePreference = Literal[
+    "Every week",
+    "Every other week",
+    "Every 3rd week",
+    "Every 4th week",
+    "Every 5th week",
+    "Every 6th week",
+    "Once a month",
+    "Twice a month",
+    "Three times a month",
+    "Choose Weeks",
+    "As often as needed",
+]
+
+
+class PersonTeamPositionAssignmentAttributes(FrozenModel):
+    """Person team position attributes."""
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
+    schedule_preference: SchedulePreference
+    preferred_weeks: list[int] | None = None
+    """When schedule_preference is set to "Choose Weeks" then this indicates which weeks
+    are preferred (checked). e.g. ['1', '3', '5'] to prefer odd num.
+    """
+
+
+class PersonTeamPositionAssignmentRelationships(FrozenModel):
+    """Person team position relationships."""
+
+    person: PersonId
+    team_position: TeamPositionId
+    time_preference_options: list[TimePreferenceOptionId]
+
+
+class PersonTeamPositionAssignment(ResponseModel):
+    """A person's assignment to a position within a team.."""
+
+    attributes: PersonTeamPositionAssignmentAttributes
+    relationships: PersonTeamPositionAssignmentRelationships
+    person: Person | None = None
+    team_position: TeamPosition | None = None
+
+
+type PersonTeamPositionAssignmentIncludeValues = Literal["person", "team_position"]
+type PersonTeamPositionAssignmentInclude = (
+    PersonTeamPositionAssignmentIncludeValues
+    | list[PersonTeamPositionAssignmentIncludeValues]
+)
+
+
+class PersonTeamPositionAssignments(Endpoint[PersonTeamPositionAssignment]):
+    """Person team position endpoint."""
+
+    def get(
+        self,
+        person_team_position_assignment_id: int,
+        /,
+        *,
+        include: PersonTeamPositionAssignmentInclude | None = None,
+    ) -> PersonTeamPositionAssignment:
+        """Get a person team position."""
+
+    def list_all(
+        self,
+        *,
+        include: PersonTeamPositionAssignmentInclude | None = None,
+        order: Literal[
+            "first_name",
+            "last_name",
+            "-first_name",
+            "-last_name",
+        ]
+        | None = None,
+        per_page: PerPage = 25,
+    ) -> list[PersonTeamPositionAssignment]:
+        """List all person team positions."""
+
+    def create(
+        self,
+        *,
+        person_id: int,
+        schedule_preference: SchedulePreference | None = None,
+        preferred_weeks: list[int] | None = None,
+        time_preference_option_ids: list[int] | None = None,
+    ) -> PersonTeamPositionAssignment:
+        """Create a person team position."""
+
+    def update(
+        self,
+        person_team_position_assignment_id: int,
+        /,
+        *,
+        schedule_preference: SchedulePreference | None = None,
+        preferred_weeks: list[int] | None = None,
+        time_preference_option_ids: list[int] | None = None,
+    ) -> PersonTeamPositionAssignment:
+        """Update a person team position."""
+
+    def delete(self, person_team_position_assignment_id: int, /) -> None:
+        """Delete a person team position."""
+
+
+type TeamPositionInclude = Literal["tags", "team"]
+
+
+class TeamPositions(Endpoint[TeamPosition]):
+    """Team position endpoint."""
+
+    def get(
+        self,
+        team_position_id: int,
+        /,
+        *,
+        include: TeamPositionInclude | None = None,
+    ) -> TeamPosition:
+        """Get a team position."""
+
+    def list_all(
+        self,
+        *,
+        include: TeamPositionInclude | None = None,
+        order: Literal["name", "-name"] | None = None,
+        per_page: PerPage = 25,
+    ) -> list[TeamPosition]:
+        """List all team positions."""
+
+    @endpoint
+    def person_team_position_assignments(self) -> PersonTeamPositionAssignments:
+        """[Person team position endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/person_team_position_assignment).
+        """
+
+
 class ServiceTypes(Endpoint[ServiceType]):
     """Service type endpoint."""
 
@@ -343,4 +517,10 @@ class ServiceTypes(Endpoint[ServiceType]):
     def plan_times(self) -> PlanTimes:
         """[Plan time endpoint](
         https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_time).
+        """
+
+    @endpoint
+    def team_positions(self) -> TeamPositions:
+        """[Team position endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/team_position).
         """

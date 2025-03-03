@@ -22,6 +22,12 @@ class _ServicesId(Related):
         return Client().services
 
 
+class AttachmentTypeId(_ServicesId):
+    """Attachment type id."""
+
+    id: int | None = None  # type: ignore[assignment]
+
+
 class FolderId(_ServicesId):
     """Folder id."""
 
@@ -78,9 +84,17 @@ class TeamId(_ServicesId):
         return self._services.teams.get(self.id, include=include)
 
 
+class TeamPositionId(_ServicesId):
+    """Team position id."""
+
+
 class SplitTeamRehearsalAssignmentId(_ServicesId):
     """Split team rehearsal assignment id."""
 
 
 class TimePreferenceOptionId(_ServicesId):
     """Time preference option id."""
+
+
+class TagId(_ServicesId):
+    """Tag id."""

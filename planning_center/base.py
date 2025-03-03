@@ -14,6 +14,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Literal,
     NotRequired,
     Self,
     TypedDict,
@@ -25,6 +26,7 @@ from typing import (
     override,
 )
 
+import requests
 from pydantic import BaseModel, ConfigDict, Field, model_validator, validate_call
 from pydantic.alias_generators import to_snake
 from pypco import PCO
@@ -70,6 +72,7 @@ class Response(TypedDict):
     links: LinksDict
     data: Any
     included: list[dict[str, Any]] | dict[str, Any]
+    relationships: dict[str, dict[Literal["data"], DataDict]]
     meta: MetaDict
 
 
@@ -88,9 +91,11 @@ class ResponseModel(FrozenModel):
     @classmethod
     def _get_relationships(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Remove any relationships that are empty."""
-        if relationships := values.pop(key := "relationships", None):
+        if relationships := values.get(key := "relationships"):
             values[key] = {
-                k: data for k, v in relationships.items() if (data := v.get("data"))
+                k: data
+                for k, v in relationships.items()
+                if isinstance(v, dict) and ((data := v.get("data")) is not None)
             }
 
         return values
@@ -108,7 +113,15 @@ class _BaseCaller(Generic[R]):
         self.root = root
         self.func = func
         self.args = args
-        self.kwargs = {k: self._to_json(v) for k, v in kwargs.items() if v is not None}
+        self.kwargs = {
+            k: (
+                ",".join(v)
+                if (k == "include") and isinstance(v, list)
+                else self._to_json(v)
+            )
+            for k, v in kwargs.items()
+            if v is not None
+        }
 
     def _to_json(self, value: Any) -> Any:
         """Convert to a value that can be serialized to JSON."""
@@ -157,32 +170,56 @@ class _BaseCaller(Generic[R]):
 
         return self._call_api((sep := "/") + sep.join(url_parts))
 
+    @staticmethod
+    def _get_id(response_dict: Response, include_string: str) -> int:
+        return response_dict["relationships"][include_string]["data"]["id"]
+
+    def _parse_response(
+        self,
+        response: Response | requests.Response,
+    ) -> dict[str, Any] | list[dict[str, Any]] | None:
+        # TODO: type the response dictionary
+        if isinstance(response, dict):
+            result = response["data"]
+
+            if include := response.get("included"):
+                for include_string in self.kwargs["include"].split(","):
+                    if isinstance(include, list):
+                        id_key = "id"
+                        for included in include:
+                            if isinstance(result, list):
+                                for i, item in enumerate(result):
+                                    item_id = self._get_id(item, include_string)
+                                    if included[id_key] == item_id:
+                                        result[i][include_string] = included
+                                        break
+                            else:
+                                item_id = self._get_id(result, include_string)
+                                if included[id_key] == item_id:
+                                    result[include_string] = included
+                    else:
+                        result[include_string] = include
+
+            return result
+
+        return None
+
     def run(self: _BaseCaller[R]) -> R:
         response = self._get_response()
 
         # TODO: type the response dictionary
-        result = response[data_key := "data"]
-
-        if include := response.get(included_key := "included"):
-            if isinstance(include, list):
-                for included in include:
-                    for i, item in enumerate(result):
-                        item_key = item["relationships"][self.kwargs["include"]][
-                            data_key
-                        ][id_key := "id"]
-                        if included[id_key] == item_key:
-                            result[i][included_key] = included
-                            break
-            else:
-                result[included_key] = include
+        result = self._parse_response(response)
 
         if (isinstance(result, list)) and (next_page := self._get_next(response)):
             while next_page is not None:
                 next_response = self._call_api(next_page)
-                result.extend(next_response[data_key])  # type: ignore[literal-required]
+                result.extend(
+                    cast(list[dict[str, Any]], self._parse_response(next_response))
+                )
                 next_page = self._get_next(next_response)
 
-        return result
+        # This will be validated by pydantic
+        return result  # type: ignore[return-value]
 
 
 @final
@@ -420,7 +457,7 @@ class Related(FrozenModel):
     @classmethod
     def _drop_type(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Remove the type from the data."""
-        if (data_type := values.pop("type", None)) and (
+        if (data_type := values.get("type")) and (
             data_type != (expected := cls.__name__.removesuffix("Id"))
         ):
             message = f"Expected type {expected!r} but got {data_type!r}."

@@ -3,7 +3,7 @@ https://developer.planning.center/docs/#/apps/groups/2023-07-10/vertices/group).
 """
 
 import datetime
-from typing import Literal, overload
+from typing import Literal
 
 from pydantic import Field
 
@@ -106,12 +106,7 @@ class Membership(ResponseModel):
 
     attributes: MembershipAttributes
     relationships: MembershipRelationship
-
-
-class MembershipPersonIncluded(Membership):
-    """Membership with people included."""
-
-    included: Person
+    person: Person | None = None
 
 
 type MembershipInclude = Literal["person"]
@@ -120,66 +115,15 @@ type MembershipInclude = Literal["person"]
 class Memberships(Endpoint[Membership]):
     """A membership of a person in a group."""
 
-    @overload
-    def get(
-        self,
-        membership_id: int,
-        /,
-        *,
-        include: Literal["person"],
-    ) -> MembershipPersonIncluded: ...
-
-    @overload
-    def get(self, membership_id: int, /) -> Membership: ...
-
     def get(
         self,
         membership_id: int,
         /,
         *,
         include: MembershipInclude | None = None,
-    ) -> MembershipPersonIncluded | Membership:
+    ) -> Membership:
         """Get a membership."""
 
-    @overload
-    def list_all(
-        self,
-        *,
-        include: Literal["person"],
-        order: Literal[
-            "first_name",
-            "joined_at",
-            "last_name",
-            "role",
-            "-first_name",
-            "-joined_at",
-            "-last_name",
-            "-role",
-        ]
-        | None = None,
-        role: Role | None = None,
-        per_page: PerPage = 25,
-    ) -> list[MembershipPersonIncluded]: ...
-
-    @overload
-    def list_all(
-        self,
-        *,
-        order: Literal[
-            "first_name",
-            "joined_at",
-            "last_name",
-            "role",
-            "-first_name",
-            "-joined_at",
-            "-last_name",
-            "-role",
-        ]
-        | None = None,
-        role: Role | None = None,
-        per_page: PerPage = 25,
-    ) -> list[Membership]: ...
-
     def list_all(
         self,
         *,
@@ -197,7 +141,7 @@ class Memberships(Endpoint[Membership]):
         | None = None,
         role: Role | None = None,
         per_page: PerPage = 25,
-    ) -> list[MembershipPersonIncluded | Membership]:
+    ) -> list[Membership]:
         """Get all memberships."""
 
     def create(
