@@ -72,7 +72,7 @@ class Response(TypedDict):
     links: LinksDict
     data: Any
     included: list[dict[str, Any]] | dict[str, Any]
-    relationships: dict[str, dict[Literal["data"], DataDict]]
+    relationships: dict[str, dict[Literal["data"], DataDict | list[DataDict]]]
     meta: MetaDict
 
 
@@ -171,8 +171,13 @@ class _BaseCaller(Generic[R]):
         return self._call_api((sep := "/") + sep.join(url_parts))
 
     @staticmethod
-    def _get_id(response_dict: Response, include_string: str) -> int:
-        return response_dict["relationships"][include_string]["data"]["id"]
+    def _get_id(response_dict: Response, include_string: str) -> int | list[int]:
+        result = response_dict["relationships"][include_string]["data"]
+
+        if isinstance(result, list):
+            return [r["id"] for r in result]
+
+        return result["id"]
 
     def _parse_response(
         self,
