@@ -6,5 +6,8 @@
   "[python]": {
     "editor.rulers": [88]
   },
-  "cSpell.words": ["Blockout", "blockouts"]
+  "cSpell.words": ["Blockout", "blockouts"],
+  "yaml.schemas": {
+    "schema.json": "config.yaml"
+  }
 }

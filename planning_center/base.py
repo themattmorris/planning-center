@@ -170,16 +170,22 @@ class _BaseCaller(Generic[R]):
 
         return self._call_api((sep := "/") + sep.join(url_parts))
 
-    @staticmethod
-    def _get_id(response_dict: Response, include_string: str) -> int | list[int]:
-        result = response_dict["relationships"][include_string]["data"]
+    def _get_id(
+        self,
+        response: Response | list[Response],
+        include_string: str,
+    ) -> int | list[int]:
+        if isinstance(response, list):
+            return [self._get_id(r, include_string) for r in response]
+
+        result = response["relationships"][include_string]["data"]
 
         if isinstance(result, list):
             return [r["id"] for r in result]
 
         return result["id"]
 
-    def _parse_response(
+    def _parse_response(  # noqa: PLR0912
         self,
         response: Response | requests.Response,
     ) -> dict[str, Any] | list[dict[str, Any]] | None:
@@ -190,6 +196,12 @@ class _BaseCaller(Generic[R]):
             if include := response.get("included"):
                 for include_string in self.kwargs["include"].split(","):
                     if isinstance(include, list):
+                        if isinstance(
+                            item_id := self._get_id(result, include_string),
+                            list,
+                        ) and isinstance(result, dict):
+                            return result | {include_string: include}
+
                         id_key = "id"
                         for included in include:
                             if isinstance(result, list):
@@ -199,8 +211,11 @@ class _BaseCaller(Generic[R]):
                                         result[i][include_string] = included
                                         break
                             else:
-                                item_id = self._get_id(result, include_string)
-                                if included[id_key] == item_id:
+                                included_id = included[id_key]
+                                if isinstance(item_id, list):
+                                    if included_id in item_id:
+                                        result[include_string] = included
+                                elif included_id == item_id:
                                     result[include_string] = included
                     else:
                         result[include_string] = include

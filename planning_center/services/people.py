@@ -3,187 +3,18 @@ https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/perso
 """
 
 import datetime
-from typing import Any, Literal
+from typing import Literal, TypedDict, Unpack
 
-from ..base import Endpoint, FrozenModel, PerPage, ResponseModel, endpoint
-from .ids import (
-    BlockoutId,
-    FolderId,
-    OrganizationId,
-    PersonId,
-    PlanId,
-    PlanPersonId,
-    PlanTimeId,
-    ServiceTypeId,
-    TeamId,
-    TimePreferenceOptionId,
+from ..base import Endpoint, PerPage, endpoint
+from .models import (
+    Blockout,
+    BlockoutDate,
+    Email,
+    Person,
+    PlanPerson,
+    PlanPersonStatus,
+    Schedule,
 )
-
-
-class PersonRelationship(FrozenModel):
-    """Person relationship."""
-
-    created_by: PersonId | None = None
-    updated_by: PersonId | None = None
-    current_folder: FolderId
-
-
-class PersonAttributes(FrozenModel):
-    """Person attributes."""
-
-    photo_url: str
-    photo_thumbnail_url: str
-    preferred_app: str
-    assigned_to_rehearsal_team: bool
-    archived_at: datetime.datetime | None
-    created_at: datetime.datetime
-    first_name: str
-    last_name: str
-    name_prefix: str | None
-    name_suffix: str | None
-    updated_at: datetime.datetime
-    full_name: str
-    permissions: str
-    status: str
-    max_permissions: str
-    anniversary: datetime.date | None
-    birthdate: datetime.date | None
-    given_name: str | None
-    middle_name: str | None
-    nickname: str | None
-    media_permissions: str | None = None
-    song_permissions: str | None = None
-    archived: bool
-    site_administrator: bool
-    logged_in_at: datetime.datetime | None
-    notes: str | None
-    passed_background_check: bool
-    ical_code: str
-    access_media_attachments: bool
-    access_plan_attachments: bool
-    access_song_attachments: bool
-    preferred_max_plans_per_day: int | None
-    preferred_max_plans_per_month: int | None
-    praise_charts_enabled: bool | None = None
-    me_tab: str | None = None
-    plans_tab: str | None = None
-    songs_tab: str | None = None
-    media_tab: str | None = None
-    people_tab: str | None = None
-    can_edit_all_people: bool | None = None
-    can_view_all_people: bool | None = None
-    onboardings: list[Any] | None = None
-
-
-class PersonLinks(FrozenModel):
-    """Person links."""
-
-    assign_tags: str | None = None
-    available_signups: str | None = None
-    blockouts: str | None = None
-    collapse_service_types: str | None = None
-    emails: str | None = None
-    expand_service_types: str | None = None
-    html: str | None = None
-    person_team_position_assignments: str | None = None
-    plan_people: str | None = None
-    schedules: str | None = None
-    scheduling_preferences: str | None = None
-    self: str | None = None
-    tags: str | None = None
-    team_leaders: str | None = None
-    text_settings: str | None = None
-
-
-class Person(ResponseModel):
-    """A person added to Planning Center Services."""
-
-    attributes: PersonAttributes
-    relationships: PersonRelationship
-    links: PersonLinks | None = None
-
-
-class BlockoutAttributes(FrozenModel):
-    """Blockout attributes."""
-
-    description: str
-    group_identifier: str | None
-    organization_name: str
-    reason: str | None
-    repeat_frequency: Literal[
-        "no_repeat",
-        "every_1",
-        "every_2",
-        "every_3",
-        "every_4",
-        "every_5",
-        "every_6",
-        "every_7",
-        "every_8",
-    ]
-    repeat_interval: (
-        Literal[
-            "exact_day_of_month",
-            "week_of_month_1",
-            "week_of_month_2",
-            "week_of_month_3",
-            "week_of_month_4",
-            "week_of_month_last",
-        ]
-        | None
-    )
-    repeat_period: Literal["daily", "weekly", "monthly", "yearly"] | None
-    settings: str | None
-    time_zone: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    repeat_until: datetime.date | None
-    starts_at: datetime.datetime
-    ends_at: datetime.datetime
-    share: bool
-
-
-class BlockoutRelationship(FrozenModel):
-    """Blockout relationship."""
-
-    person: PersonId
-    organization: OrganizationId
-
-
-class Blockout(ResponseModel):
-    """An object representing a blockout date, and an optional recurrence pattern."""
-
-    attributes: BlockoutAttributes
-    relationships: BlockoutRelationship
-
-
-class BlockoutDateAttributes(FrozenModel):
-    """Blockout date attributes."""
-
-    group_identifier: str
-    reason: str | None
-    time_zone: str
-    share: bool
-    starts_at: datetime.datetime
-    ends_at: datetime.datetime
-    ends_at_utc: datetime.datetime
-    starts_at_utc: datetime.datetime
-
-
-class BlockoutDateRelationship(FrozenModel):
-    """Blockout date relationship."""
-
-    person: PersonId
-    blockout: BlockoutId
-
-
-class BlockoutDate(ResponseModel):
-    """The actual dates generated by the blockout or its recurrence pattern. Generated
-    up to a year in advance.
-    """
-
-    attributes: BlockoutDateAttributes
-    relationships: BlockoutDateRelationship
 
 
 class BlockoutDates(Endpoint[BlockoutDate]):
@@ -217,19 +48,6 @@ class Blockouts(Endpoint[Blockout]):
         """
 
 
-class EmailAttributes(FrozenModel):
-    """Email attributes."""
-
-    primary: bool
-    address: str
-
-
-class Email(ResponseModel):
-    """An email address for a person."""
-
-    attributes: EmailAttributes
-
-
 class Emails(Endpoint[Email]):
     """Emails endpoint."""
 
@@ -238,55 +56,6 @@ class Emails(Endpoint[Email]):
 
     def list_all(self, *, per_page: PerPage = 25) -> list[Email]:
         """Get all emails for a person."""
-
-
-class ScheduleAttributes(FrozenModel):
-    """Schedule attributes."""
-
-    sort_date: datetime.datetime
-    dates: str
-    decline_reason: str | None
-    organization_name: str
-    organization_time_zone: str
-    organization_twenty_four_hour_time: bool
-    person_name: str
-    position_display_times: str | None
-    responds_to_name: str
-    service_type_name: str
-    short_dates: str
-    status: str
-    team_name: str
-    team_position_name: str
-    can_accept_partial: bool
-    can_accept_partial_one_time: bool
-    can_rehearse: bool
-
-    plan_visible: bool
-    """True if the scheduled Plan is visible to the scheduled Person."""
-
-    plan_visible_to_me: bool
-    """True if the scheduled Plan is visible to the current Person."""
-
-
-class ScheduleRelationship(FrozenModel):
-    """Schedule relationship."""
-
-    person: PersonId
-    service_type: ServiceTypeId
-    organization: OrganizationId
-    plan_person: PlanPersonId
-    plan: PlanId
-    team: TeamId
-    responds_to_person: PersonId | None = None
-
-
-class Schedule(ResponseModel):
-    """An instance of a PlanPerson with included data for displaying in a user's
-    schedule.
-    """
-
-    attributes: ScheduleAttributes
-    relationships: ScheduleRelationship
 
 
 type ScheduleInclude = Literal["plan_times"]
@@ -314,57 +83,21 @@ class Schedules(Endpoint[Schedule]):
         """Get all schedules for a person."""
 
 
-class PlanPersonAttributes(FrozenModel):
-    """PlanPerson attributes."""
-
-    status: Literal["C", "U", "D", "Confirmed", "Unconfirmed", "Declined"]
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    notes: str | None
-    decline_reason: str | None
-    name: str
-    notification_changed_by_name: str
-    notification_sender_name: str
-    team_position_name: str
-    photo_thumbnail: str
-
-    scheduled_by_name: str | None = None
-    """Only available when requested with the ?fields param."""
-
-    status_updated_at: datetime.datetime
-    notification_changed_at: datetime.datetime
-    notification_prepared_at: datetime.datetime | None
-    notification_read_at: datetime.datetime
-    notification_sent_at: datetime.datetime
-    prepare_notification: bool
-
-    can_accept_partial: bool
-    """If the person is scheduled to a split team where they could potentially accept 1
-    time and decline another.
-    """
-
-
-class PlanPersonRelationship(FrozenModel):
-    """PlanPerson relationship."""
-
-    person: PersonId
-    plan: PlanId
-    scheduled_by: PersonId
-    service_type: ServiceTypeId
-    team: TeamId
-    responds_to: PersonId | None = None
-    times: list[PlanTimeId]
-    time_preference_options: list[TimePreferenceOptionId] | None = None
-
-
-class PlanPerson(ResponseModel):
-    """A person scheduled within a specific plan."""
-
-    attributes: PlanPersonAttributes
-    relationships: PlanPersonRelationship
-
-
 type PlanPersonInclude = Literal["declined_plan_times", "person", "plan", "team"]
+
+
+class PlanPersonParams(TypedDict, total=False):
+    """Parameters for creating or updating a plan person."""
+
+    person_id: int
+    team_id: int
+    status: PlanPersonStatus
+    decline_reason: str
+    notes: str
+    team_position_name: str
+    responds_to_id: int
+    prepare_notification: bool
+    notification_prepared_at: datetime.datetime
 
 
 class PlanPeople(Endpoint[PlanPerson]):
@@ -386,6 +119,17 @@ class PlanPeople(Endpoint[PlanPerson]):
         per_page: PerPage = 25,
     ) -> list[PlanPerson]:
         """Get all plan people."""
+
+    def update(
+        self,
+        plan_person_id: int,
+        /,
+        **kwargs: Unpack[PlanPersonParams],
+    ) -> PlanPerson:
+        """Update a plan person."""
+
+    def delete(self, plan_person_id: int, /) -> None:
+        """Delete a plan person."""
 
 
 type PersonInclude = Literal["emails", "tags", "team_leaders"]

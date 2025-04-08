@@ -9,9 +9,10 @@ from ..base import Related
 
 if TYPE_CHECKING:
     from . import Services
+    from .models import TeamInclude
     from .people import Person, PersonInclude
     from .service_types import ServiceType, ServiceTypeInclude
-    from .teams import Team, TeamInclude
+    from .teams import Team
 
 
 class _ServicesId(Related):
