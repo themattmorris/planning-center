@@ -7,6 +7,7 @@ from typing import Literal, TypedDict, Unpack
 
 from ..base import Endpoint, PerPage, endpoint
 from .models import (
+    NeededPosition,
     PersonTeamPositionAssignment,
     Plan,
     PlanPerson,
@@ -20,7 +21,12 @@ from .models import (
 from .people import PlanPersonParams
 
 
-type ServiceTypeInclude = Literal["time_preference_options"]
+type TeamMemberFilter = Literal[
+    "confirmed",
+    "not_archived",
+    "not_declined",
+    "not_deleted",
+]
 
 
 class TeamMembers(Endpoint[PlanPerson]):
@@ -31,13 +37,59 @@ class TeamMembers(Endpoint[PlanPerson]):
         plan_person_id: int,
         /,
         *,
-        filter: Literal["confirmed", "not_archived", "not_declined", "not_deleted"]
-        | None = None,
+        filter: TeamMemberFilter | None = None,
     ) -> PlanPerson:
         """Get a plan person."""
 
+    def list_all(
+        self,
+        *,
+        filter: TeamMemberFilter | None = None,
+        per_page: PerPage = 25,
+    ) -> list[PlanPerson]:
+        """List all plan people."""
+
     def create(self, **kwargs: Unpack[PlanPersonParams]) -> PlanPerson:
         """Create a plan person."""
+
+
+type NeededPositionInclude = Literal["team", "time"]
+
+
+class NeededPositions(Endpoint[NeededPosition]):
+    """Needed positions endpoint."""
+
+    def get(
+        self,
+        needed_position_id: int,
+        /,
+        *,
+        include: NeededPositionInclude | None = None,
+    ) -> NeededPosition:
+        """Get a needed position."""
+
+    def list_all(
+        self,
+        *,
+        include: NeededPositionInclude | None = None,
+        per_page: PerPage = 25,
+    ) -> list[NeededPosition]:
+        """List all needed positions."""
+
+    def create(
+        self,
+        *,
+        quantity: int | None = None,
+        time_id: int | None = None,
+        time_preference_option_id: int | None = None,
+    ) -> NeededPosition:
+        """Create a needed position."""
+
+    def update(self, needed_position_id: int, /, quantity: int) -> NeededPosition:
+        """Update a needed position."""
+
+    def delete(self, needed_position_id: int, /) -> None:
+        """Delete a needed position."""
 
 
 class Plans(Endpoint[Plan]):
@@ -106,6 +158,12 @@ class Plans(Endpoint[Plan]):
     @endpoint
     def team_members(self) -> TeamMembers:
         """Team members endpoint."""
+
+    @endpoint
+    def needed_positions(self) -> NeededPositions:
+        """[Needed positions endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/needed_position).
+        """
 
 
 type PlanTimeInclude = Literal["split_team_rehearsal_assignments"]
@@ -247,6 +305,9 @@ class TeamPositions(Endpoint[TeamPosition]):
         """[Person team position endpoint](
         https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/person_team_position_assignment).
         """
+
+
+type ServiceTypeInclude = Literal["time_preference_options"]
 
 
 class ServiceTypes(Endpoint[ServiceType]):

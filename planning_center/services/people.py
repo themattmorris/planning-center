@@ -14,6 +14,7 @@ from .models import (
     PlanPerson,
     PlanPersonStatus,
     Schedule,
+    SchedulingPreference,
 )
 
 
@@ -132,6 +133,16 @@ class PlanPeople(Endpoint[PlanPerson]):
         """Delete a plan person."""
 
 
+class SchedulingPreferences(Endpoint[SchedulingPreference]):
+    """Scheduling preferences endpoint."""
+
+    def get(self, scheduling_preference_id: int, /) -> SchedulingPreference:
+        """Get a scheduling preference."""
+
+    def list_all(self, *, per_page: PerPage = 25) -> list[SchedulingPreference]:
+        """List all scheduling preferences."""
+
+
 type PersonInclude = Literal["emails", "tags", "team_leaders"]
 
 
@@ -188,4 +199,10 @@ class People(Endpoint[Person]):
     def plan_people(self) -> PlanPeople:
         """[PlanPeople endpoint](
         https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_person).
+        """
+
+    @endpoint
+    def scheduling_preferences(self) -> SchedulingPreferences:
+        """[Scheduling preferences endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/scheduling_preference).
         """

@@ -409,6 +409,30 @@ class Schedule(ResponseModel):
     relationships: ScheduleRelationship
 
 
+class NeededPositionAttributes(FrozenModel):
+    """Needed position attributes."""
+
+    quantity: int
+    team_position_name: str
+    scheduled_to: str
+
+
+class NeededPositionRelationship(FrozenModel):
+    """Needed position relationship."""
+
+    team: TeamId
+    plan: PlanId
+    time: PlanTimeId | None = None
+    time_preference_option: TimePreferenceOptionId | None = None
+
+
+class NeededPosition(ResponseModel):
+    """An amount of unfilled positions needed within a team in a plan."""
+
+    attributes: NeededPositionAttributes
+    relationships: NeededPositionRelationship
+
+
 type PlanPersonStatus = Literal["C", "U", "D", "Confirmed", "Unconfirmed", "Declined"]
 
 
@@ -421,7 +445,7 @@ class PlanPersonAttributes(FrozenModel):
     notes: str | None
     decline_reason: str | None
     name: str
-    notification_changed_by_name: str
+    notification_changed_by_name: str | None
     notification_sender_name: str
     team_position_name: str
     photo_thumbnail: str
@@ -429,11 +453,11 @@ class PlanPersonAttributes(FrozenModel):
     scheduled_by_name: str | None = None
     """Only available when requested with the ?fields param."""
 
-    status_updated_at: datetime.datetime
-    notification_changed_at: datetime.datetime
-    notification_prepared_at: datetime.datetime | None
-    notification_read_at: datetime.datetime
-    notification_sent_at: datetime.datetime
+    status_updated_at: datetime.datetime | None = None
+    notification_changed_at: datetime.datetime | None = None
+    notification_prepared_at: datetime.datetime | None = None
+    notification_read_at: datetime.datetime | None = None
+    notification_sent_at: datetime.datetime | None = None
     prepare_notification: bool
 
     can_accept_partial: bool
@@ -460,6 +484,25 @@ class PlanPerson(ResponseModel):
 
     attributes: PlanPersonAttributes
     relationships: PlanPersonRelationship
+
+
+class SchedulingPreferenceAttributes(FrozenModel):
+    """Scheduling preference attributes."""
+
+    preference: str
+
+
+class SchedulingPreferenceRelationship(FrozenModel):
+    """Scheduling preference relationship."""
+
+    household_member: PersonId
+
+
+class SchedulingPreference(ResponseModel):
+    """Household member scheduling preference."""
+
+    attributes: SchedulingPreferenceAttributes
+    relationships: SchedulingPreferenceRelationship
 
 
 class TeamPositionAttributes(FrozenModel):

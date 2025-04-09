@@ -8,6 +8,6 @@
   },
   "cSpell.words": ["Blockout", "blockouts"],
   "yaml.schemas": {
-    "schema.json": "config.yaml"
+    "schema.json": "configs/*"
   }
 }
