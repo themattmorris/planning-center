@@ -32,6 +32,9 @@ dev-dependencies = ["pytest", "pre-commit"]
 Issues = "https://github.com/themattmorris/planning-center/issues"
 Source = "https://github.com/themattmorris/planning-center"
 
+[project.scripts]
+pc = "cli:app"
+
 [tool.hatch.version]
 path = "planning_center/__init__.py"
 

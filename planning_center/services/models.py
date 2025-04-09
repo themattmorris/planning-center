@@ -1,5 +1,7 @@
 """Services models."""
 
+from __future__ import annotations
+
 import datetime
 from typing import Annotated, Any, Literal
 
@@ -57,6 +59,71 @@ class ServiceType(ResponseModel):
 
     attributes: ServiceTypeAttributes
     relationships: ServiceTypeRelationship
+
+
+type TeamInclude = Literal[
+    "people",
+    "person_team_position_assignments",
+    "service_type",
+    "team_leaders",
+    "team_positions",
+]
+
+
+class TeamReminder(FrozenModel):
+    """Team reminder."""
+
+    team_id: int
+    value: Annotated[int, Field(ge=0, le=7)]
+
+    def get_team(self, *, include: TeamInclude | None = None) -> Team:
+        """Load the team."""
+        return TeamId(id=self.team_id).load(include=include)
+
+
+type TimeType = Literal["rehearsal", "service", "other"]
+
+
+class PlanTimeAttributes(FrozenModel):
+    """Plan attributes."""
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    name: str | None
+    time_type: TimeType
+    recorded: bool
+
+    team_reminders: list[TeamReminder]
+    """A Hash that maps a Team ID to a reminder value. If nothing is specified, no
+    reminder is set for that team. A reminder value is an integer (0-7) equal to the
+    number of days before the selected time a reminder should be sent.
+    """
+
+    starts_at: datetime.datetime
+    """Planned start time."""
+
+    ends_at: datetime.datetime
+    """Planned end time."""
+
+    live_starts_at: datetime.datetime | None
+    """Start time as recorded by Services LIVE."""
+
+    live_ends_at: datetime.datetime | None
+    """End time as recorded by Services LIVE."""
+
+
+class PlanTimeRelationship(FrozenModel):
+    """PlanTime relationship."""
+
+    assigned_times: list[TeamId] | None = None
+    split_team_rehearsal_assignments: list[SplitTeamRehearsalAssignmentId] | None = None
+
+
+class PlanTime(ResponseModel):
+    """A time in a plan."""
+
+    attributes: PlanTimeAttributes
+    relationships: PlanTimeRelationship
 
 
 class PlanAttributes(FrozenModel):
@@ -139,6 +206,7 @@ class Plan(ResponseModel):
 
     attributes: PlanAttributes
     relationships: PlanRelationship
+    plan_times: list[PlanTime] | None = None
 
 
 class OrganizationAttributes(FrozenModel):
@@ -446,7 +514,7 @@ class PlanPersonAttributes(FrozenModel):
     decline_reason: str | None
     name: str
     notification_changed_by_name: str | None
-    notification_sender_name: str
+    notification_sender_name: str | None
     team_position_name: str
     photo_thumbnail: str
 
@@ -627,68 +695,3 @@ class Team(ResponseModel):
     service_type: ServiceType | None = None
     team_leaders: list[Person] | None = None
     team_positions: list[TeamPosition] | None = None
-
-
-type TeamInclude = Literal[
-    "people",
-    "person_team_position_assignments",
-    "service_type",
-    "team_leaders",
-    "team_positions",
-]
-
-
-class TeamReminder(FrozenModel):
-    """Team reminder."""
-
-    team_id: int
-    value: Annotated[int, Field(ge=0, le=7)]
-
-    def get_team(self, *, include: TeamInclude | None = None) -> Team:
-        """Load the team."""
-        return TeamId(id=self.team_id).load(include=include)
-
-
-type TimeType = Literal["rehearsal", "service", "other"]
-
-
-class PlanTimeAttributes(FrozenModel):
-    """Plan attributes."""
-
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    name: str | None
-    time_type: TimeType
-    recorded: bool
-
-    team_reminders: list[TeamReminder]
-    """A Hash that maps a Team ID to a reminder value. If nothing is specified, no
-    reminder is set for that team. A reminder value is an integer (0-7) equal to the
-    number of days before the selected time a reminder should be sent.
-    """
-
-    starts_at: datetime.datetime
-    """Planned start time."""
-
-    ends_at: datetime.datetime
-    """Planned end time."""
-
-    live_starts_at: datetime.datetime | None
-    """Start time as recorded by Services LIVE."""
-
-    live_ends_at: datetime.datetime | None
-    """End time as recorded by Services LIVE."""
-
-
-class PlanTimeRelationship(FrozenModel):
-    """PlanTime relationship."""
-
-    assigned_times: list[TeamId] | None = None
-    split_team_rehearsal_assignments: list[SplitTeamRehearsalAssignmentId] | None = None
-
-
-class PlanTime(ResponseModel):
-    """A time in a plan."""
-
-    attributes: PlanTimeAttributes
-    relationships: PlanTimeRelationship

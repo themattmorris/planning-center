@@ -189,7 +189,6 @@ class _BaseCaller(Generic[R]):
         self,
         response: Response | requests.Response,
     ) -> dict[str, Any] | list[dict[str, Any]] | None:
-        # TODO: type the response dictionary
         if isinstance(response, dict):
             result = response["data"]
 
@@ -204,19 +203,24 @@ class _BaseCaller(Generic[R]):
 
                         id_key = "id"
                         for included in include:
+                            included_id = included[id_key]
                             if isinstance(result, list):
                                 for i, item in enumerate(result):
                                     item_id = self._get_id(item, include_string)
-                                    if included[id_key] == item_id:
+                                    if isinstance(item_id, list):
+                                        if included_id in item_id:
+                                            if include_string not in item:
+                                                result[i][include_string] = [included]
+                                            else:
+                                                item[include_string].append(included)
+                                    elif included[id_key] == item_id:
                                         result[i][include_string] = included
                                         break
-                            else:
-                                included_id = included[id_key]
-                                if isinstance(item_id, list):
-                                    if included_id in item_id:
-                                        result[include_string] = included
-                                elif included_id == item_id:
+                            elif isinstance(item_id, list):
+                                if included_id in item_id:
                                     result[include_string] = included
+                            elif included_id == item_id:
+                                result[include_string] = included
                     else:
                         result[include_string] = include
 
@@ -226,8 +230,6 @@ class _BaseCaller(Generic[R]):
 
     def run(self: _BaseCaller[R]) -> R:
         response = self._get_response()
-
-        # TODO: type the response dictionary
         result = self._parse_response(response)
 
         if (isinstance(result, list)) and (next_page := self._get_next(response)):
