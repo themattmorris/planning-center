@@ -137,7 +137,7 @@ class GroupAttributes(FrozenModel):
     created_at: datetime.datetime
     """The date and time the group was created."""
 
-    description: str
+    description: str | None = None
     """A longform description of the group. Can contain HTML markup."""
 
     events_visibility: Literal["public", "members"]
@@ -183,3 +183,67 @@ class Group(ResponseModel):
 
     attributes: GroupAttributes
     relationships: GroupRelationship
+
+
+class GroupTypeAttributes(FrozenModel):
+    """Group type attributes."""
+
+    church_center_visible: bool
+    """True if the group type contains any published groups. Otherwise False."""
+
+    church_center_map_visible: bool
+    """True if the map view is visible on the public groups list page. Otherwise False.
+    """
+
+    color: str
+    """Hex color value. Color themes are a visual tool for administrators on the admin
+    side of Groups. Ex: "#4fd2e3.
+    """
+
+    default_group_settings: str
+    """A JSON object of default settings for groups of this type."""
+
+    description: str | None = None
+    """A description of the group type."""
+
+    name: str
+    """The name of the group type."""
+
+    position: int
+    """The position of the group type in relation to other group types."""
+
+
+class GroupType(ResponseModel):
+    """A group type is a category of groups. For example, a church might have group
+    types for "Small Groups" and "Classes".
+    """
+
+
+class ResourceAttributes(FrozenModel):
+    """Resource attributes."""
+
+    description: str | None = None
+    """The description of the resource written by the person who created it."""
+
+    last_updated: datetime.datetime
+    """The date and time the resource was last updated."""
+
+    name: str
+    """The name/title of the resource."""
+
+    type: Literal["FileResource", "LinkResource"]
+    visibility: Literal["leaders", "members"]
+
+
+class ResourceRelationship(FrozenModel):
+    """Resource relationship."""
+
+    created_by: PersonId
+    """The person who created this resource."""
+
+
+class Resource(ResponseModel):
+    """A file or link resource that can be shared with a group."""
+
+    attributes: ResourceAttributes
+    relationships: ResourceRelationship

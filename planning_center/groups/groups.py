@@ -6,6 +6,7 @@ import datetime
 from typing import Literal
 
 from ..base import Endpoint, PerPage, endpoint
+from .group_types import Resources
 from .models import Group, Membership, Person, Role
 
 
@@ -13,7 +14,7 @@ type MembershipInclude = Literal["person"]
 
 
 class Memberships(Endpoint[Membership]):
-    """A membership of a person in a group."""
+    """Memberships endpoint."""
 
     def get(
         self,
@@ -91,6 +92,12 @@ class Groups(Endpoint[Group]):
     def memberships(self) -> Memberships:
         """[Memberships endpoint](
         https://developer.planning.center/docs/#/apps/groups/2023-07-10/vertices/membership).
+        """
+
+    @endpoint
+    def resources(self) -> Resources:
+        """[Resources endpoint](
+        https://developer.planning.center/docs/#/apps/groups/2023-07-10/vertices/resource).
         """
 
 
