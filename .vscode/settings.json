@@ -4,10 +4,35 @@
   "python.testing.pytestEnabled": true,
   "python.REPL.enableREPLSmartSend": false,
   "[python]": {
-    "editor.rulers": [88]
+    "editor.rulers": [88],
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.formatOnSave": true,
+    "editor.wordBasedSuggestions": "off",
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "always",
+      "source.organizeImports.ruff": "always"
+    }
   },
-  "cSpell.words": ["Blockout", "blockouts"],
+  "cSpell.words": [
+    "Alivia",
+    "Blockout",
+    "blockouts",
+    "Cielecki",
+    "Cyndy",
+    "Hutson",
+    "Janetlee",
+    "Kylie",
+    "Lynde",
+    "Maddie",
+    "Persak",
+    "Scribano",
+    "Stong"
+  ],
   "yaml.schemas": {
     "configs/schema.json": "configs/config.yaml"
+  },
+  "workbench.editorAssociations": {
+    "file:/**/*.csv": "jupyter-data-wrangler"
   }
 }

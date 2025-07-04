@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class _ServicesId(Related):
     @property
     def _services(self) -> Services:
-        from ..client import Client
+        from ..client import Client  # noqa: PLC0415
 
         return Client().services
 
@@ -55,6 +55,10 @@ class PlanPersonId(_ServicesId):
 
 class PlanTimeId(_ServicesId):
     """Plan time id."""
+
+
+class PlanNoteCategoryId(_ServicesId):
+    """Plan note category id."""
 
 
 class PersonTeamPositionAssignmentId(_ServicesId):

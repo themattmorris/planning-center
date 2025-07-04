@@ -13,7 +13,6 @@ from types import get_original_bases
 from typing import (
     Annotated,
     Any,
-    Generic,
     Literal,
     NotRequired,
     Self,
@@ -101,7 +100,7 @@ class ResponseModel(FrozenModel):
         return values
 
 
-class _BaseCaller(Generic[R]):
+class _BaseCaller[R]:
     def __init__(
         self,
         root: bool,
@@ -383,7 +382,7 @@ M = TypeVar("M", bound=ResponseModel)
 type PerPage = Annotated[int, Field(ge=1, le=100)]
 
 
-class Endpoint(_EndpointBase, Generic[M]):
+class Endpoint[M](_EndpointBase):
     """Base class for planning center endpoint."""
 
     def __init__(self, app: App, *parents: _Parent) -> None:
@@ -412,6 +411,7 @@ class Endpoint(_EndpointBase, Generic[M]):
     @abc.abstractmethod
     def get(self, id: int, /, *, include: str | None = None) -> M:
         """Get an item by id."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def list_all(
@@ -422,18 +422,22 @@ class Endpoint(_EndpointBase, Generic[M]):
         filter: str | None = None,
     ) -> list[M]:
         """List all items."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def update(self, *args: int, **kwargs: Any) -> M:
         """Update an item."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def create(self, **kwargs: Any) -> M:
         """Create an item."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def delete(self, id: int, /) -> None:
         """Delete an item."""
+        raise NotImplementedError
 
 
 class endpoint(property):  # noqa: N801

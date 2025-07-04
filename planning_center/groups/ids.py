@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class _GroupsId(Related):
     @property
     def _groups(self) -> Groups:
-        from ..client import Client
+        from ..client import Client  # noqa: PLC0415
 
         return Client().groups
 

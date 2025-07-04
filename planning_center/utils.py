@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, cast
+from typing import Any, cast
 
 from ._typing import C, T
 
 
-class _SingletonWrapper(Generic[T]):
+class _SingletonWrapper[T]:
     """A singleton wrapper class. Its instances would be created for each decorated
     class. This was taken from `singleton-decorator` library.
     """

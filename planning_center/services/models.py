@@ -16,6 +16,7 @@ from .ids import (
     PersonId,
     PersonTeamPositionAssignmentId,
     PlanId,
+    PlanNoteCategoryId,
     PlanPersonId,
     PlanTimeId,
     SeriesId,
@@ -124,6 +125,60 @@ class PlanTime(ResponseModel):
 
     attributes: PlanTimeAttributes
     relationships: PlanTimeRelationship
+
+
+class PlanTemplateAttributes(FrozenModel):
+    """PlanTemplate attributes."""
+
+    name: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None
+    item_count: int
+    team_count: int
+    note_count: int
+    can_view_order: bool
+    multi_day: bool
+    rehearsable: bool
+    prefers_order_view: bool
+
+
+class PlanTemplateRelationship(FrozenModel):
+    """PlanTemplate relationship."""
+
+    service_type: ServiceTypeId
+    created_by: PersonId
+    updated_by: PersonId | None
+
+
+class PlanTemplate(ResponseModel):
+    """A PlanTemplate Resource."""
+
+    attributes: PlanTemplateAttributes
+    relationships: PlanTemplateRelationship
+
+
+class PlanNoteAttributes(FrozenModel):
+    """PlanNote attributes."""
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None
+    category_name: str
+    content: str
+
+
+class PlanNoteRelationship(FrozenModel):
+    """PlanNote relationship."""
+
+    created_by: PersonId
+    plan_note_category: PlanNoteCategoryId
+    teams: list[TeamId]
+
+
+class PlanNote(ResponseModel):
+    """A specific plan note within a single plan."""
+
+    attributes: PlanNoteAttributes
+    relationships: PlanNoteRelationship
 
 
 class PlanAttributes(FrozenModel):

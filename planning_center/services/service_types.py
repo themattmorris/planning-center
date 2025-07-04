@@ -10,7 +10,9 @@ from .models import (
     NeededPosition,
     PersonTeamPositionAssignment,
     Plan,
+    PlanNote,
     PlanPerson,
+    PlanTemplate,
     PlanTime,
     SchedulePreference,
     ServiceType,
@@ -52,6 +54,9 @@ class TeamMembers(Endpoint[PlanPerson]):
     def create(self, **kwargs: Unpack[PlanPersonParams]) -> PlanPerson:
         """Create a plan person."""
 
+    def delete(self, plan_person_id: int, /) -> None:
+        """Delete a plan person."""
+
 
 type NeededPositionInclude = Literal["team", "time"]
 
@@ -90,6 +95,20 @@ class NeededPositions(Endpoint[NeededPosition]):
 
     def delete(self, needed_position_id: int, /) -> None:
         """Delete a needed position."""
+
+
+class NotesParams(TypedDict):
+    """Parameters for creating notes."""
+
+    category_name: str
+    content: str
+
+
+class Notes(Endpoint):
+    """Plan notes endpoint."""
+
+    def create(self, **kwargs: Unpack[NotesParams]) -> PlanNote:
+        """Create a plan note."""
 
 
 class Plans(Endpoint[Plan]):
@@ -164,6 +183,34 @@ class Plans(Endpoint[Plan]):
         """[Needed positions endpoint](
         https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/needed_position).
         """
+
+    @endpoint
+    def notes(self) -> Notes:
+        """Notes endpoint for creating [plan notes](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_note).
+        """
+
+
+type PlanTemplateOrder = Literal[
+    "created_at",
+    "item_count",
+    "name",
+    "note_count",
+    "team_count",
+    "updated_at",
+]
+
+
+class PlanTemplates(Endpoint[PlanTemplate]):
+    """Plan template endpoint."""
+
+    def get(self, plan_template_id: int, /) -> PlanTemplate:
+        """Get a plan template."""
+
+    def list_all(
+        self, *, order: PlanTemplateOrder | None = None, per_page: PerPage = 25
+    ) -> list[PlanTemplate]:
+        """Get plan templates for a service type."""
 
 
 type PlanTimeInclude = Literal["split_team_rehearsal_assignments"]
@@ -342,6 +389,12 @@ class ServiceTypes(Endpoint[ServiceType]):
     def plan_times(self) -> PlanTimes:
         """[Plan time endpoint](
         https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_time).
+        """
+
+    @endpoint
+    def plan_templates(self) -> PlanTemplates:
+        """[Plan template endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_template).
         """
 
     @endpoint

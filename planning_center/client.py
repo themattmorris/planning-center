@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar, cast
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,7 +29,7 @@ class _Auth(BaseSettings):
 A = TypeVar("A", bound=App)
 
 
-class app(property, Generic[A]):  # noqa: N801
+class app[A](property):  # noqa: N801
     """Property that returns an instance of the annotated type."""
 
     def __init__(
@@ -45,8 +45,8 @@ class app(property, Generic[A]):  # noqa: N801
     def __get__(self: app[A], instance: Client | None, owner: type[Client]) -> A:
         """Return the app type."""
         if instance:
-            return_type: type[A] = get_return_type(self.fget)  # type: ignore[arg-type]
-            return return_type(instance._pco)
+            return_type = cast(type[A], get_return_type(self.fget))  # type: ignore[arg-type]
+            return return_type(instance._pco)  # type: ignore[call-arg]
         return super().__get__(instance, owner)
 
 
