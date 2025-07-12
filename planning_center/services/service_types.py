@@ -3,9 +3,9 @@ https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/servi
 """
 
 import datetime
-from typing import Literal, TypedDict, Unpack
+from typing import Annotated, Literal, TypedDict, Unpack
 
-from ..base import Endpoint, PerPage, endpoint
+from ..base import Endpoint, PerPage, Relationship, RelationshipInfo, endpoint
 from .models import (
     NeededPosition,
     PersonTeamPositionAssignment,
@@ -97,17 +97,59 @@ class NeededPositions(Endpoint[NeededPosition]):
         """Delete a needed position."""
 
 
-class NotesParams(TypedDict):
+class NotesParams(TypedDict, total=False):
     """Parameters for creating notes."""
 
     category_name: str
     content: str
 
 
-class Notes(Endpoint):
+type PlanNoteInclude = Literal["plan_note_category"]
+
+
+class Notes(Endpoint[PlanNote]):
     """Plan notes endpoint."""
 
-    def create(self, **kwargs: Unpack[NotesParams]) -> PlanNote:
+    def get(
+        self,
+        plan_note_id: int,
+        /,
+        *,
+        include: PlanNoteInclude | None = None,
+    ) -> PlanNote:
+        """Get a plan note."""
+
+    def list_all(
+        self,
+        *,
+        include: PlanNoteInclude | None = None,
+        order: Literal[
+            "created_at",
+            "updated_at",
+            "-created_at",
+            "-updated_at",
+        ]
+        | None = None,
+        per_page: PerPage = 25,
+    ) -> list[PlanNote]:
+        """Get all plan notes."""
+
+    def delete(self, plan_note_id: int, /) -> None:
+        """Delete a plan note."""
+
+    def update(self, plan_note_id: int, /, **kwargs: Unpack[NotesParams]) -> PlanNote:
+        """Update a plan note."""
+
+    def create(
+        self,
+        *,
+        content: str,
+        plan_note_category: Relationship,
+        team: Annotated[
+            Relationship,
+            RelationshipInfo(type_name="PlanPersonCategory", as_list=True),
+        ],
+    ) -> PlanNote:
         """Create a plan note."""
 
 
@@ -208,9 +250,18 @@ class PlanTemplates(Endpoint[PlanTemplate]):
         """Get a plan template."""
 
     def list_all(
-        self, *, order: PlanTemplateOrder | None = None, per_page: PerPage = 25
+        self,
+        *,
+        order: PlanTemplateOrder | None = None,
+        per_page: PerPage = 25,
     ) -> list[PlanTemplate]:
         """Get plan templates for a service type."""
+
+    @endpoint
+    def notes(self) -> Notes:
+        """[Plan notes endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/plan_note).
+        """
 
 
 type PlanTimeInclude = Literal["split_team_rehearsal_assignments"]

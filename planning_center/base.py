@@ -11,6 +11,7 @@ import inspect
 from collections.abc import Callable
 from types import get_original_bases
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Literal,
@@ -21,16 +22,25 @@ from typing import (
     cast,
     final,
     get_args,
+    get_origin,
     overload,
     override,
 )
 
 import requests
-from pydantic import BaseModel, ConfigDict, Field, model_validator, validate_call
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    model_validator,
+    validate_call,
+)
 from pydantic.alias_generators import to_snake
 from pypco import PCO
 
-from ._typing import P, R, get_return_type
+from ._typing import P, R, T, get_return_type
+from .utils import to_PascalCase
 
 
 class DataDict(TypedDict):
@@ -79,6 +89,12 @@ class FrozenModel(BaseModel):
     """A pydantic BaseModel that is immutable."""
 
     model_config = ConfigDict(frozen=True, validate_default=True, extra="ignore")
+
+
+def validate(value: Any, hint: type[T]) -> T:
+    """Perform validation on a value according to a type hint."""
+    adapter = TypeAdapter(hint)
+    return adapter.validate_python(value)
 
 
 class ResponseModel(FrozenModel):
@@ -268,32 +284,72 @@ class _GetCaller(_BaseCaller):
         return self.app._pco.get(url, **payload)
 
 
-class _UpdateCaller(_BaseCaller):
+class _UpdateCaller(_BaseCaller[R]):
     @property
     def extra_payload_data(self) -> dict[str, Any]:
         return {}
 
     @property
     def payload(self) -> dict[str, Any]:
-        return {
-            "data": {
-                "attributes": self.kwargs,
-                "type": (
-                    get_args(get_original_bases(type(self.endpoint))[0])[0].__name__
-                ),
-            }
-            | self.extra_payload_data
+        kwargs = dict(self.kwargs)
+
+        # Determine if any of the kwargs are relationships.
+        relationships: dict[str, Any] = {}
+
+        for k, v in inspect.signature(self.func).parameters.items():
+            if (annotation := v.annotation) is Relationship:
+                type_name = to_PascalCase(k)
+                as_list = False
+
+            elif (
+                (get_origin(v.annotation) is Annotated)
+                and (metadata := annotation.__metadata__)
+                and isinstance(first := metadata[0], RelationshipInfo)
+            ):
+                type_name = first.type_name
+                as_list = first.as_list
+            else:
+                type_name = None
+
+                if (annotation is not inspect.Parameter.empty) and (k in kwargs):
+                    kwargs[k] = validate(kwargs[k], annotation)
+
+            if type_name and ((value := kwargs.pop(k, None)) is not None):
+                relationship_data: DataDict | list[DataDict] = DataDict(
+                    type=type_name,
+                    id=cast(int, value),
+                )
+
+                if as_list:
+                    relationship_data = [relationship_data]
+
+                relationships[k] = {"data": relationship_data}
+
+        data = {
+            "type": get_args(get_original_bases(type(self.endpoint))[0])[0].__name__,
+            "attributes": kwargs,
         }
+
+        if relationships:
+            data["relationships"] = relationships
+
+        return {"data": data | self.extra_payload_data}
 
 
 @final
-class _PostCaller(_UpdateCaller):
+class _PostCaller(_UpdateCaller[R]):
     def _call_api(self, url: str) -> Response:
         return self.app._pco.post(url, self.payload)
 
+    @override
+    def run(self: _PostCaller[R]) -> R:
+        response = cast(dict[str, Any], super().run())
+        return_type = get_return_type(self.func)
+        return validate(response, return_type)
+
 
 @final
-class _PatchCaller(_UpdateCaller):
+class _PatchCaller(_UpdateCaller[R]):
     @property
     @override
     def extra_payload_data(self) -> dict[str, Any]:
@@ -304,7 +360,7 @@ class _PatchCaller(_UpdateCaller):
 
 
 @final
-class _DeleteCaller(_BaseCaller):
+class _DeleteCaller(_BaseCaller[R]):
     def _call_api(self, url: str) -> Response:
         return self.app._pco.delete(url)
 
@@ -312,22 +368,28 @@ class _DeleteCaller(_BaseCaller):
 class HTTPMethod(enum.Enum):
     """HTTP methods."""
 
-    GET = (http.HTTPMethod.GET, _GetCaller)
+    GET = (http.HTTPMethod.GET, _GetCaller, True)
     """Retrieve the target."""
 
-    POST = (http.HTTPMethod.POST, _PostCaller)
+    POST = (http.HTTPMethod.POST, _PostCaller, False)
     """Perform target-specific processing with the request payload."""
 
-    PATCH = (http.HTTPMethod.PATCH, _PatchCaller)
+    PATCH = (http.HTTPMethod.PATCH, _PatchCaller, True)
     """Apply partial modifications to a target."""
 
-    DELETE = (http.HTTPMethod.DELETE, _DeleteCaller)
+    DELETE = (http.HTTPMethod.DELETE, _DeleteCaller, True)
     """Remove the target."""
 
-    def __init__(self, http_method: http.HTTPMethod, caller: type[_BaseCaller]) -> None:
+    def __init__(
+        self,
+        http_method: http.HTTPMethod,
+        caller: type[_BaseCaller],
+        validate: bool,
+    ) -> None:
         """Initialize the HTTP method."""
         self.http_method = http_method
         self.caller = caller
+        self.validate = validate
 
     def __str__(self) -> str:
         """String representation of method."""
@@ -348,14 +410,32 @@ class HTTPMethod(enum.Enum):
         """Decorate a method to run the corresponding HTTP method."""
 
         def decorator(func: Callable[P, R]) -> Callable[P, R]:
-            @validate_call(validate_return=True)
             @functools.wraps(func)
             def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 return self.caller(root, func, *args, **kwargs).run()  # type: ignore[arg-type]
 
-            return wrapper
+            return (
+                validate_call(validate_return=True)(wrapper)
+                if self.validate
+                else wrapper
+            )
 
         return decorator(_func) if _func else decorator
+
+
+class RelationshipInfo(FrozenModel):
+    """Metadata to indicate that an attribute is a relationship."""
+
+    type_name: str
+    as_list: bool
+
+
+if TYPE_CHECKING:
+    Relationship = int
+else:
+
+    class Relationship:
+        """Sentinel value for relationship annotations."""
 
 
 def _to_url_name(value: Any) -> str:

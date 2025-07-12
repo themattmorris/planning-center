@@ -35,3 +35,8 @@ def singleton(cls: C) -> C:
     result.__name__ = cls.__name__  # type: ignore[attr-defined]
     result.__doc__ = cls.__doc__
     return cast(C, result)
+
+
+def to_PascalCase(value: str) -> str:  # noqa: N802
+    """Convert a string to PascalCase."""
+    return "".join(word.capitalize() for word in value.split("_"))

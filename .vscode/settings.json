@@ -13,26 +13,5 @@
       "source.fixAll.ruff": "always",
       "source.organizeImports.ruff": "always"
     }
-  },
-  "cSpell.words": [
-    "Alivia",
-    "Blockout",
-    "blockouts",
-    "Cielecki",
-    "Cyndy",
-    "Hutson",
-    "Janetlee",
-    "Kylie",
-    "Lynde",
-    "Maddie",
-    "Persak",
-    "Scribano",
-    "Stong"
-  ],
-  "yaml.schemas": {
-    "configs/schema.json": "configs/config.yaml"
-  },
-  "workbench.editorAssociations": {
-    "file:/**/*.csv": "jupyter-data-wrangler"
   }
 }
