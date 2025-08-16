@@ -5,25 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeVar, cast
 
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pypco import PCO
-
 from ._typing import get_return_type
-from .base import App
+from .base import App, get_pco
 from .groups import Groups
 from .people import People
 from .services import Services
 from .utils import singleton
-
-
-class _Auth(BaseSettings):
-    """Authentication."""
-
-    model_config = SettingsConfigDict(env_file=".env")
-
-    client_id: SecretStr
-    client_secret: SecretStr
 
 
 A = TypeVar("A", bound=App)
@@ -56,11 +43,7 @@ class Client:
 
     def __init__(self) -> None:
         """Initialize client."""
-        auth = _Auth()
-        self._pco = PCO(
-            application_id=auth.client_id.get_secret_value(),
-            secret=auth.client_secret.get_secret_value(),
-        )
+        self._pco = get_pco()
 
     @app
     def services(self) -> Services:

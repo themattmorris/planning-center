@@ -264,6 +264,25 @@ class Plan(ResponseModel):
     plan_times: list[PlanTime] | None = None
 
 
+class TimePreferenceOptionAttributes(FrozenModel):
+    """Time preference option attributes."""
+
+    day_of_week: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    description: str
+    sort_index: str
+    time_type: str
+    minute_of_day: int
+    starts_at: datetime.datetime
+
+
+class TimePreferenceOption(ResponseModel):
+    """A Service Time a person prefers to be scheduled to."""
+
+    attributes: TimePreferenceOptionAttributes
+
+
 class OrganizationAttributes(FrozenModel):
     """Organization attributes."""
 

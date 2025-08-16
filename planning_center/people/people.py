@@ -5,7 +5,7 @@ https://developer.planning.center/docs/#/apps/people/2024-09-12/vertices/person)
 import datetime
 from typing import Literal, TypedDict, Unpack
 
-from ..base import Endpoint, PerPage
+from ..base import Endpoint, PerPage, get_pco
 from .models import Person
 
 
@@ -126,3 +126,8 @@ class People(Endpoint[Person]):
 
     def delete(self, person_id: int, /) -> None:
         """Delete a person."""
+
+    def import_(self):  # type: ignore[no-untyped-def]
+        """Import the person."""
+        pco = get_pco(api_base="https://services.planningcenteronline.com")
+        return pco.post(f"/people/{self._parents[0].id}/import")

@@ -32,15 +32,36 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    SecretStr,
     TypeAdapter,
     model_validator,
     validate_call,
 )
 from pydantic.alias_generators import to_snake
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pypco import PCO
 
 from ._typing import P, R, T, get_return_type
 from .utils import to_PascalCase
+
+
+class _Auth(BaseSettings):
+    """Authentication."""
+
+    model_config = SettingsConfigDict(env_file=".env")
+
+    client_id: SecretStr
+    client_secret: SecretStr
+
+
+def get_pco(api_base: str = "https://api.planningcenteronline.com") -> PCO:
+    """Get the PCO client."""
+    auth = _Auth()
+    return PCO(
+        application_id=auth.client_id.get_secret_value(),
+        secret=auth.client_secret.get_secret_value(),
+        api_base=api_base,
+    )
 
 
 class DataDict(TypedDict):
@@ -321,7 +342,7 @@ class _UpdateCaller(_BaseCaller[R]):
                 )
 
                 if as_list:
-                    relationship_data = [relationship_data]
+                    relationship_data = [relationship_data]  # type: ignore[list-item]
 
                 relationships[k] = {"data": relationship_data}
 

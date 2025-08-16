@@ -18,6 +18,7 @@ from .models import (
     ServiceType,
     TeamPosition,
     TeamReminder,
+    TimePreferenceOption,
     TimeType,
 )
 from .people import PlanPersonParams
@@ -405,6 +406,16 @@ class TeamPositions(Endpoint[TeamPosition]):
         """
 
 
+class TimePreferenceOptions(Endpoint[TimePreferenceOption]):
+    """Time preference option endpoint."""
+
+    def get(self, time_preference_option_id: int, /) -> TimePreferenceOption:
+        """Get a time preference option."""
+
+    def list_all(self, /) -> list[TimePreferenceOption]:
+        """List all time preference options."""
+
+
 type ServiceTypeInclude = Literal["time_preference_options"]
 
 
@@ -452,4 +463,10 @@ class ServiceTypes(Endpoint[ServiceType]):
     def team_positions(self) -> TeamPositions:
         """[Team position endpoint](
         https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/team_position).
+        """
+
+    @endpoint
+    def time_preference_options(self) -> TimePreferenceOptions:
+        """[Time preference option endpoint](
+        https://developer.planning.center/docs/#/apps/services/2018-11-01/vertices/time_preference_option).
         """
