@@ -298,6 +298,7 @@ class PlanTimes(Endpoint[PlanTime]):
         order: Literal["starts_at", "-starts_at"] | None = None,
         time_type: TimeType | None = None,
         per_page: PerPage = 25,
+        filter: Literal["future", "past", "named"] | None = None,
     ) -> list[PlanTime]:
         """Get plan times for a service type."""
 
